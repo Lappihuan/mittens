@@ -157,18 +157,18 @@ default/grafana
 ### In a container
 
 It is possible to schedule kubetap as a Pod in Kubernetes using the
-`ghcr.io/Lappihuan/kubectl-tap:latest` container. When run in a cluster,
+`ghcr.io/lappihuan/kubectl-tap:latest` container. When run in a cluster,
 kubetap will automatically detect and use serviceaccount tokens that are
 mounted to the container's filesystem.
 
 Additionally, it is possible to run the containers from a developer laptop as follows:
 
 ```sh
-docker run -v "${HOME}/.kube/:/.kube/:ro" 'ghcr.io/Lappihuan/kubectl-tap:latest' on -p80 myservice
+docker run -v "${HOME}/.kube/:/.kube/:ro" 'ghcr.io/lappihuan/kubectl-tap:latest' on -p80 myservice
 ```
 
 ```sh
-docker run -v "${HOME}/.kube/:.kube/:ro" 'ghcr.io/Lappihuan/kubectl-tap:latest' off myservice
+docker run -v "${HOME}/.kube/:.kube/:ro" 'ghcr.io/lappihuan/kubectl-tap:latest' off myservice
 ```
 
 ## Made by Soluble.ai

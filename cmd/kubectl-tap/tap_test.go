@@ -204,7 +204,7 @@ var (
 					Containers: []v1.Container{
 						{
 							Name:  "someapp",
-							Image: "ghcr.io/Lappihuan/someapp:latest",
+							Image: "ghcr.io/lappihuan/someapp:latest",
 						},
 					},
 				},
@@ -249,11 +249,11 @@ var (
 					Containers: []v1.Container{
 						{
 							Name:  "someapp",
-							Image: "ghcr.io/Lappihuan/someapp:latest",
+							Image: "ghcr.io/lappihuan/someapp:latest",
 						},
 						{
 							Name:  kubetapContainerName,
-							Image: "ghcr.io/Lappihuan/kubetap-mitmproxy:latest",
+							Image: "ghcr.io/lappihuan/kubetap-mitmproxy:latest",
 						},
 					},
 					Volumes: []v1.Volume{
