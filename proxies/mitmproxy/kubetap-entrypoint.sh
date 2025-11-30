@@ -37,8 +37,19 @@ if [[ "${1}" == 'mitmdump' || "${1}" == 'mitmproxy' || "${1}" == 'mitmweb' ]]; t
       echo "ERROR: Mitmproxy session exited immediately" >&2
     fi
     
+    # Create a bashrc file that auto-attaches to tmux on interactive shell
+    cat > /root/.bashrc << 'BASHRC_EOF'
+# Auto-attach to mitmproxy tmux session if it exists and we're in an interactive shell
+if [[ $- == *i* ]] && [ -z "$TMUX" ]; then
+  if tmux has-session -t mitmproxy 2>/dev/null; then
+    exec tmux attach-session -t mitmproxy
+  fi
+fi
+BASHRC_EOF
+    
     # Keep the container running - sleep indefinitely
     # This allows users to attach via: kubectl exec -it <pod> -- tmux attach-session -t mitmproxy
+    # or just: kubectl exec -it <pod> -- bash
     echo "Container keeping alive with sleep infinity" >&2
     sleep infinity
   else
@@ -47,6 +58,12 @@ if [[ "${1}" == 'mitmdump' || "${1}" == 'mitmproxy' || "${1}" == 'mitmweb' ]]; t
     exec "${@}" --set "confdir=${MITMPROXY_PATH}"
   fi
 else
+  # For interactive shells, auto-attach to mitmproxy if available
+  if [[ "$1" == "bash" || "$1" == "sh" || -z "$1" ]]; then
+    if tmux has-session -t mitmproxy 2>/dev/null; then
+      exec tmux attach-session -t mitmproxy
+    fi
+  fi
   echo "Running command: ${@}" >&2
   exec "${@}"
 fi
