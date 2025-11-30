@@ -50,6 +50,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y zsh kubectl
 
+    - name: Clean Go caches
+      run: |
+        go clean -cache -modcache || true
+        rm -rf ~/.cache/go-build || true
+
     - name: Install developer tools
       run: make deps
       working-directory: ./
