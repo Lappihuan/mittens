@@ -1,4 +1,4 @@
-FROM mitmproxy/mitmproxy:12.0.1
+FROM mitmproxy/mitmproxy:12.2.1
 
 # mitmproxy is built on alpine, so in case the image is old
 # (and lazily avoiding having to build it ourselves for now), update

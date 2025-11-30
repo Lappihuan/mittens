@@ -6,7 +6,7 @@ RUN apk add --no-cache -U upx && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-w -s" -o /go/bin/kubectl-tap ./cmd/kubectl-tap && \
     upx /go/bin/kubectl-tap
 
-FROM alpine:3.21 as alpine
+FROM alpine:3.22 as alpine
 WORKDIR /usr/share/zoneinfo
 RUN apk -U --no-cache add tzdata zip ca-certificates && \
     zip -r -0 /zoneinfo.zip .
