@@ -49,7 +49,7 @@ fi
 # helm
 if ! [ -x "$(command -v helm)" ]; then
   echo "Installing helm ${HELM_VERSION}"
-  go install helm.sh/helm/v3/cmd/helm@${HELM_VERSION}
+  go install helm.sh/helm/v4/cmd/helm@${HELM_VERSION}
 fi
 
 # kind
