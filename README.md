@@ -158,11 +158,11 @@ mounted to the container's filesystem.
 Additionally, it is possible to run the containers from a developer laptop as follows:
 
 ```sh
-docker run -v "${HOME}/.kube/:/.kube/:ro" 'gcr.io/soluble-oss/kubectl-tap:latest' on -p80 myservice
+docker run -v "${HOME}/.kube/:/.kube/:ro" 'ghcr.io/Lappihuan/kubectl-tap:latest' on -p80 myservice
 ```
 
 ```sh
-docker run -v "${HOME}/.kube/:.kube/:ro" 'gcr.io/soluble-oss/kubectl-tap:latest' off myservice
+docker run -v "${HOME}/.kube/:.kube/:ro" 'ghcr.io/Lappihuan/kubectl-tap:latest' off myservice
 ```
 
 ## Made by Soluble.ai
