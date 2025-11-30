@@ -46,13 +46,12 @@ import (
 )
 
 const (
-	kubetapContainerName         = "kubetap"
-	kubetapServicePortName       = "kubetap-web"
-	kubetapPortName              = "kubetap-listen"
-	kubetapWebPortName           = "kubetap-web"
-	kubetapProxyListenPort       = 7777
-	kubetapProxyWebInterfacePort = 2244
-	kubetapConfigMapPrefix       = "kubetap-target-"
+	kubetapContainerName   = "kubetap"
+	kubetapServicePortName = "kubetap-web"
+	kubetapPortName        = "kubetap-listen"
+	kubetapWebPortName     = "kubetap-web"
+	kubetapProxyListenPort = 7777
+	kubetapConfigMapPrefix = "kubetap-target-"
 
 	interactiveTimeoutSeconds = 90
 	configMapAnnotationPrefix = "target-"
@@ -342,9 +341,8 @@ func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *vipe
 		if !portForward {
 			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Port %d of Service %q has been tapped!\n\n", targetSvcPort, targetSvcName)
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "You can access the proxy web interface at http://127.0.0.1:2244\n")
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "after running the following command:\n\n")
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  kubectl port-forward svc/%s -n %s 2244:2244\n\n", targetSvcName, namespace)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "To access the mitmproxy interactive terminal, attach to the kubetap sidecar:\n\n")
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  kubectl exec -it <pod-name> -c kubetap -- tmux attach-session -t mitmproxy\n\n")
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "If the Service is not publicly exposed through an Ingress,\n")
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "you can access it with the following command:\n\n")
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  kubectl port-forward svc/%s -n %s 4000:%d\n\n", targetSvcName, namespace, targetSvcPort)
