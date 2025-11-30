@@ -3,39 +3,99 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  # shorten repeated keys
+  GOFLAGS: -mod=readonly
+  GOPROXY: https://proxy.golang.org
+
 jobs:
-  build:
-    timeout-minutes: 15
-    name: Go build kubectl-tap
+  verify:
+    name: Verify (fast lint)
     runs-on: ubuntu-latest
-    env:
-      GOFLAGS: -mod=readonly
-      GOPROXY: https://proxy.golang.org
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Configure GOBIN and cache
+        id: gobin-cache-setup
+        run: |
+          echo "GOBIN=${{ github.workspace }}/.gobin" >> $GITHUB_ENV
+          echo "${{ github.workspace }}/.gobin" >> $GITHUB_PATH
+
+      - name: Restore GOBIN cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.gobin
+          key: ${{ runner.OS }}-gobin-${{ hashFiles('scripts/deps.sh') }}
+
+      - name: Install golangci-lint (fast)
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.35.2
+
+      - name: Lint
+        run: golangci-lint run --timeout 3m
+
+  build:
+    name: Build matrix
+    runs-on: ubuntu-latest
+    needs: verify
     strategy:
       matrix:
-        go: 
-        - '1.14'
-        - '1.15'
+        go: ['1.24', '1.25']
+    timeout-minutes: 30
     steps:
-    - 
-      name: Setup Go env
-      uses: actions/setup-go@v6
-      with:
-        go-version: ${{ matrix.go }}
-    - 
-      name: Install Dependencies
-      run: sudo apt-get update; sudo apt-get install zsh kubectl
-    - 
-      name: Checkout
-      uses: actions/checkout@v6
-    - 
-      name: Lint and Test
-      run: |
-        go generate ./...
-    - 
-      name: Build
-      run: |
-        go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
-    - 
-      name: Integration Test
-      run: ./scripts/ig-test.zsh
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Restore Go module/cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Configure GOBIN and cache
+        run: |
+          echo "GOBIN=${{ github.workspace }}/.gobin" >> $GITHUB_ENV
+          echo "${{ github.workspace }}/.gobin" >> $GITHUB_PATH
+
+      - name: Restore GOBIN cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.gobin
+          key: ${{ runner.OS }}-gobin-${{ matrix.go }}-${{ hashFiles('scripts/deps.sh') }}
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh kubectl
+
+      - name: Install developer tools (fast)
+        # install full dev tools; caching of .gobin speeds future runs
+        run: make deps
+
+      - name: Generate code
+        run: go generate ./...
+
+      - name: Build
+        run: go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
+
+      - name: Integration Test
+        run: ./scripts/ig-test.zsh

@@ -1,3 +1,41 @@
+name: Docs
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'docs/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install mkdocs
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install mkdocs mkdocs-material
+
+      - name: Build site
+        run: mkdocs build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.SOLUBLE_KUBETAP_BOT_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          user_name: kubetap-bot
+          user_email: devnull@soluble.ai
 name: docs
 on:
   push:
@@ -11,32 +49,31 @@ jobs:
     name: Update documentation site
     runs-on: ubuntu-latest
     steps:
-    - 
-      name: Setup Python
-      uses: actions/setup-python@v6
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
-    -
-      name: Setup Python env
+
+    - name: Setup Python env
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install mkdocs mkdocs-material
-    -
-      name: Checkout
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-    - 
-      name: Setup Git
+
+    - name: Setup Git
       run: git config user.email "devnull@soluble.ai" && git config user.name "kubetap-bot"
-    - 
-      name: Update Docs
+
+    - name: Build site
       run: |
         mkdocs build
         cp -R ./site/* .
         git clean -fX site
-    -
-      name: Add changes
+
+    - name: Add changes
       run: |
         git add .
         git stash

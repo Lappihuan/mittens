@@ -9,41 +9,61 @@ on:
 
 jobs:
   build:
-    timeout-minutes: 15
+    timeout-minutes: 30
     name: Go build kubectl-tap
     runs-on: ubuntu-latest
     steps:
-    - 
-      name: Setup Go env
-      uses: actions/setup-go@v6
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
       with:
-        go-version: '1.25.4'
-    - 
-      name: Checkout
-      uses: actions/checkout@v6
-    - 
-      name: Cache
+        go-version: '1.24'
+
+    - name: Cache Go modules
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    - 
-      name: Install packages
+
+    - name: Add Go bin to PATH
+      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+    - name: Configure GOBIN and cache
+      run: |
+        echo "GOBIN=${{ github.workspace }}/.gobin" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/.gobin" >> $GITHUB_PATH
+
+    - name: Restore GOBIN cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/.gobin
+        key: ${{ runner.OS }}-gobin-${{ hashFiles('scripts/deps.sh') }}
+
+    - name: Install system packages
       run: |
         sudo apt-get update
-        sudo apt-get install zsh kubectl
-    - 
-      name: Lint and Test
-      run: |
-        go generate ./...
-    - 
-      name: Build
-      run: |
-        go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
-    - 
-      name: Integration Test
+        sudo apt-get install -y zsh kubectl
+
+    - name: Install developer tools
+      run: make deps
+      working-directory: ./
+
+    - name: Generate code
+      run: go generate ./...
+
+    - name: Lint
+      run: golangci-lint run --timeout 5m
+
+    - name: Build
+      run: go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
+
+    - name: Integration Test
       run: ./scripts/ig-test.zsh
 
   docker-build-scratch:
@@ -52,9 +72,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - 
-      name: Checkout
-      uses: actions/checkout@v6
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - 
       name: Build binary and push to GCR
       uses: docker/build-push-action@v6
@@ -73,9 +94,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - 
-      name: Checkout
-      uses: actions/checkout@v6
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - 
       name: Build binary and push to GCR
       uses: docker/build-push-action@v6
@@ -95,24 +117,22 @@ jobs:
     name: Release kubectl-tap
     runs-on: ubuntu-latest
     steps:
-    - 
-      name: Setup Go env
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.25.4'
-    - 
-      name: Install zsh
-      run: sudo apt-get update; sudo apt-get install zsh
-    - 
-      name: Checkout
-      uses: actions/checkout@v6
+    - name: Checkout
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - 
-      name: Fetch for goreleaser
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Install zsh
+      run: sudo apt-get update; sudo apt-get install -y zsh
+    - name: Fetch for goreleaser
       run: git fetch --prune
-    - 
-      name: Build
+
+    - name: Build
       run: |
         go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
     - 

@@ -55,6 +55,29 @@ $ go generate
 $ go install ./cmd/kubectl-tap
 ```
 
+### Developer dependencies (for contributors)
+
+If you're working on the codebase and need the developer tooling (linters, test runners, kind, helm, etc.), run the helper that installs the required CLI tools into your Go bin directory:
+
+```sh
+# from the repository root (where go.mod lives)
+./scripts/deps.sh
+# or using make if you prefer
+make deps
+```
+
+After installation, ensure your Go bin is on your PATH so the installed tools are found:
+
+```sh
+export PATH="$(go env GOPATH)/bin:$PATH"
+# or if you set GOBIN
+export PATH="${GOBIN:-$(go env GOPATH)/bin}:$PATH"
+```
+
+Notes:
+- The `deps.sh` script uses `go install <module>@<version>` so it works with modern Go versions even when run outside a module directory.
+- If you'd like reproducible developer environments in CI, prefer invoking `go install` with explicit versions (the script does this) and ensure the workflow runs from the repository root (see CI snippet below).
+
 ### Homebrew
 
 Soluble provides a [homebrew formula repository](https://github.com/soluble-ai/homebrew-kubetap).

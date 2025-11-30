@@ -28,6 +28,10 @@ ig-test: zsh
 lint: zsh
 	./scripts/lint.zsh
 
+.PHONY: deps
+deps: zsh
+	./scripts/deps.sh
+
 .PHONY: images
 images: zsh
 	./scripts/images.zsh
