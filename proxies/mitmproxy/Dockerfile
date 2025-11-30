@@ -8,7 +8,9 @@ RUN apt-get update && \
 
 # HACK: the security context of the injected pod could be run as any user, therefore
 # all users must be able to write to the directory.
-RUN chmod -R 777 /home/mitmproxy/.mitmproxy/
+# Ensure the directory exists and is world-writable
+RUN mkdir -p /home/mitmproxy/.mitmproxy && \
+    chmod -R 777 /home/mitmproxy/.mitmproxy/
 
 # Hijack the mitmproxy entrypoint (docker-entrypoint.sh) so that
 # configuration can be built from within the container using the
