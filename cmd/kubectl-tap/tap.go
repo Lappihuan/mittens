@@ -569,7 +569,7 @@ func NewUntapCommand(client kubernetes.Interface, viper *viper.Viper) func(*cobr
 		if err := untapSvc(servicesClient, targetSvcName); err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "Untapped Service %q\n", targetSvcName)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Untapped Service %q\n", targetSvcName)
 		return nil
 	}
 }
