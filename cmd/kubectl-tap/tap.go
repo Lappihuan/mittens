@@ -173,7 +173,7 @@ func NewListCommand(client kubernetes.Interface, viper *viper.Viper) func(*cobra
 
 // NewTapCommand identifies a target employment through service selectors and modifies that
 // deployment to add a proxy sidecar.
-func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *viper.Viper) func(*cobra.Command, []string) error { //nolint: gocyclo
+func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Viper) func(*cobra.Command, []string) error { //nolint: gocyclo
 	return func(cmd *cobra.Command, args []string) error {
 		targetSvcName := args[0]
 
@@ -426,7 +426,7 @@ func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *vipe
 		}
 
 		// Spawn kubectl exec to attach to mitmproxy tmux session
-		execCmd := exec.Command("kubectl", "exec", "-it", pod.Name, "-n", namespace, "-c", "kubetap", "--", "tmux", "attach-session", "-t", "mitmproxy")
+		execCmd := exec.CommandContext(cmd.Context(), "kubectl", "exec", "-it", pod.Name, "-n", namespace, "-c", "kubetap", "--", "tmux", "attach-session", "-t", "mitmproxy")
 		execCmd.Stdin = os.Stdin
 		execCmd.Stdout = os.Stdout
 		execCmd.Stderr = os.Stderr
