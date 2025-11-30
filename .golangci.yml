@@ -24,6 +24,10 @@ linters:
     - godoclint
     - noinlineerr
     - inamedparam
+    - intrange
+    - ireturn
+    - maintidx
+    - gosec
   exclusions:
     paths:
       - hack

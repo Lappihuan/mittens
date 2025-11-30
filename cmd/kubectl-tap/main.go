@@ -42,7 +42,7 @@ const (
 )
 
 // die exit the program, printing the error.
-func die(args ...interface{}) {
+func die(args ...any) {
 	fmt.Fprintln(os.Stderr, args...)
 	os.Exit(1)
 }
@@ -181,7 +181,7 @@ func NewVersionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Show version of kubectl-tap",
 		Run: func(cmd *cobra.Command, _ []string) {
-			fmt.Fprintf(cmd.OutOrStdout(), "version: %s, commit: %s, built at: %s\n", version, commit, date)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "version: %s, commit: %s, built at: %s\n", version, commit, date)
 		},
 	}
 }

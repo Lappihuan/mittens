@@ -114,9 +114,9 @@ type ProxyOptions struct {
 	// Protocol is the protocol type, one of [http, https]
 	Protocol Protocol `json:"protocol"`
 	// UpstreamHTTPS should be set to true if the target is using HTTPS
-	UpstreamHTTPS bool `json:"upstream_https"`
+	UpstreamHTTPS bool `json:"upstreamHttps"`
 	// UpstreamPort is the listening port for the target Service
-	UpstreamPort string `json:"upstream_port"`
+	UpstreamPort string `json:"upstreamPort"`
 	// Mode is the proxy mode. Only "reverse" is currently supported.
 	Mode string `json:"mode"`
 	// Namespace is the namespace that the Service and Deployment are in
@@ -130,7 +130,7 @@ type ProxyOptions struct {
 
 // NewListCommand lists Services that are already tapped.
 func NewListCommand(client kubernetes.Interface, viper *viper.Viper) func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, _ []string) error {
 		namespace := viper.GetString("namespace")
 		exists, err := hasNamespace(client, namespace)
 		if err != nil {
@@ -156,22 +156,22 @@ func NewListCommand(client kubernetes.Interface, viper *viper.Viper) func(*cobra
 
 		if namespace != "" {
 			if len(tappedServices) == 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "No Services in the %s namespace are tapped.\n", namespace)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No Services in the %s namespace are tapped.\n", namespace)
 				return nil
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Tapped Services in the %s namespace:\n\n", namespace)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Tapped Services in the %s namespace:\n\n", namespace)
 			for k := range tappedServices {
-				fmt.Fprintf(cmd.OutOrStdout(), "%s\n", k)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", k)
 			}
 			return nil
 		}
 		if len(tappedServices) == 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "No Services are tapped.")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No Services are tapped.")
 			return nil
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Tapped Namespace/Service:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Tapped Namespace/Service:")
 		for k, v := range tappedServices {
-			fmt.Fprintf(cmd.OutOrStdout(), "%s/%s\n", v, k)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s/%s\n", v, k)
 		}
 		return nil
 	}
@@ -196,7 +196,7 @@ func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *vipe
 		}
 		commandArgs := strings.Fields(viper.GetString("commandArgs"))
 		if targetSvcPort == 0 {
-			return fmt.Errorf("--port flag not provided")
+			return errors.New("--port flag not provided")
 		}
 		if namespace == "" {
 			// TODO: There is probably a way to get the default namespace from the
@@ -222,7 +222,7 @@ func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *vipe
 		}
 		// Adjust default image by protocol if not manually set
 		if image == defaultImageHTTP {
-			switch Protocol(protocol) { // nolint: exhaustive
+			switch Protocol(protocol) { //nolint: exhaustive
 			case protocolTCP, protocolUDP:
 				// TODO: make this container and remove error
 				image = defaultImageRaw
@@ -289,7 +289,7 @@ func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *vipe
 
 		// Get a proxy based on the protocol type
 		var proxy Tap
-		switch Protocol(protocol) { // nolint: exhaustive
+		switch Protocol(protocol) { //nolint: exhaustive
 		case protocolTCP, protocolUDP:
 		case protocolGRPC:
 		default:
@@ -331,7 +331,7 @@ func NewTapCommand(client kubernetes.Interface, config *rest.Config, viper *vipe
 			return updateErr
 		})
 		if retryErr != nil {
-			fmt.Fprintln(cmd.OutOrStdout(), "Error modifying Deployment, reverting tap...")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Error modifying Deployment, reverting tap...")
 			_ = NewUntapCommand(client, viper)(cmd, args)
 			return fmt.Errorf("failed to add sidecars to Deployment: %w", retryErr)
 		}

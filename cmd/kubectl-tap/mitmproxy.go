@@ -165,8 +165,8 @@ func (m *Mitmproxy) ReadyEnv() error {
 		_ = destroyMitmproxyConfigMap(configmapsClient, m.ProxyOpts.dplName)
 		rErr := createMitmproxyConfigMap(configmapsClient, m.ProxyOpts)
 		if rErr != nil {
-			if errors.Is(os.ErrInvalid, rErr) {
-				return fmt.Errorf("there was an unexpected problem creating the ConfigMap")
+			if errors.Is(rErr, os.ErrInvalid) {
+				return errors.New("there was an unexpected problem creating the ConfigMap")
 			}
 			return rErr
 		}
