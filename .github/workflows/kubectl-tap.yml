@@ -57,7 +57,7 @@ jobs:
       uses: actions/checkout@v6
     - 
       name: Build binary and push to GCR
-      uses: docker/build-push-action@v1
+      uses: docker/build-push-action@v6
       with:
         path: .
         dockerfile: Dockerfile
@@ -78,7 +78,7 @@ jobs:
       uses: actions/checkout@v6
     - 
       name: Build binary and push to GCR
-      uses: docker/build-push-action@v1
+      uses: docker/build-push-action@v6
       with:
         path: .
         dockerfile: Dockerfile.alpine
