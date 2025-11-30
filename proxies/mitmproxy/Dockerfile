@@ -1,4 +1,4 @@
-FROM mitmproxy/mitmproxy:12.0.1
+FROM mitmproxy/mitmproxy:12.2.1
 
 # Update and install tmux in the Debian-based image
 RUN apt-get update && \
