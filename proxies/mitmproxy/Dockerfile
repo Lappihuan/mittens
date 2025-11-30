@@ -6,11 +6,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends tmux && \
     rm -rf /var/lib/apt/lists/*
 
-# HACK: the security context of the injected pod could be run as any user, therefore
-# all users must be able to write to the directory.
-# Ensure the directory exists and is world-writable
+# Ensure the directory exists and is world-writable BEFORE we switch users
 RUN mkdir -p /home/mitmproxy/.mitmproxy && \
-    chmod -R 777 /home/mitmproxy/.mitmproxy/
+    chmod 777 /home/mitmproxy && \
+    chmod 777 /home/mitmproxy/.mitmproxy
 
 # Hijack the mitmproxy entrypoint (docker-entrypoint.sh) so that
 # configuration can be built from within the container using the
