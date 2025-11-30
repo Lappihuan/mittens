@@ -43,7 +43,7 @@ jobs:
           rm -rf "$(go env GOCACHE)" || true
 
       - name: Install golangci-lint (official binary)
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v1.50.0
 
