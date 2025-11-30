@@ -38,7 +38,8 @@ if [[ "${1}" == 'mitmdump' || "${1}" == 'mitmproxy' || "${1}" == 'mitmweb' ]]; t
     fi
     
     # Create a bashrc file that auto-attaches to tmux on interactive shell
-    cat > /root/.bashrc << 'BASHRC_EOF'
+    # Write to the mitmproxy user's home directory
+    cat > /home/mitmproxy/.bashrc << 'BASHRC_EOF'
 # Auto-attach to mitmproxy tmux session if it exists and we're in an interactive shell
 if [[ $- == *i* ]] && [ -z "$TMUX" ]; then
   if tmux has-session -t mitmproxy 2>/dev/null; then
@@ -46,6 +47,7 @@ if [[ $- == *i* ]] && [ -z "$TMUX" ]; then
   fi
 fi
 BASHRC_EOF
+    chmod 644 /home/mitmproxy/.bashrc
     
     # Keep the container running - sleep indefinitely
     # This allows users to attach via: kubectl exec -it <pod> -- tmux attach-session -t mitmproxy
