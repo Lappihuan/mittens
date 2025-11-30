@@ -31,9 +31,9 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.SOLUBLE_KUBETAP_BOT_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
           publish_branch: gh-pages
           user_name: kubetap-bot
-          user_email: devnull@soluble.ai
+          user_email: noreply@github.com
  

@@ -151,7 +151,7 @@ default/grafana
 ### In a container
 
 It is possible to schedule kubetap as a Pod in Kubernetes using the
-`grc.io/soluble-oss/kubectl-tap:latest` container. When run in a cluster,
+`ghcr.io/Lappihuan/kubectl-tap:latest` container. When run in a cluster,
 kubetap will automatically detect and use serviceaccount tokens that are
 mounted to the container's filesystem.
 
