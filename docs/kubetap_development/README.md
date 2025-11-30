@@ -5,7 +5,7 @@ to contribute.
 
 ## Kubetap overview
 
-Kubtap is developed by [Matt Hamilton](https://github.com/eriner) at [Soluble.ai](https://www.soluble.ai/) as an [Apache v2 Licensed](https://github.com/soluble-ai/kubetap/blob/master/LICENSE)
+Kubtap is developed by [Matt Hamilton](https://github.com/eriner) at [Soluble.ai](https://www.soluble.ai/) as an [Apache v2 Licensed](https://github.com/Lappihuan/kubetap/blob/master/LICENSE)
 open source project.
 
 Kubetap arose from a need to quickly and efficiently proxy Kubernetes Services
@@ -35,7 +35,7 @@ Assuming you have [built kubetap from source](../getting_started/installation.md
 you're ready to hack on kubetap.
 
 ```sh
-$ cd ${GOPATH}/src/github.com/soluble-ai/kubetap
+$ cd ${GOPATH}/src/github.com/Lappihuan/kubetap
 
 $ go generate .
 

@@ -1,7 +1,7 @@
 site_name: kubetap
 site_description: 'Kubetap - kubectl plugin to interactively proxy Kubernetes Services with ease'
-repo_name: 'soluble-ai/kubetap'
-repo_url: https://github.com/soluble-ai/kubetap
+repo_name: 'Lappihuan/kubetap'
+repo_url: https://github.com/Lappihuan/kubetap
 copyright: 'Copyright &copy; 2020 Soluble'
 docs_dir: docs
 edit_uri: ""
@@ -38,6 +38,6 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github-alt
-      link: https://github.com/soluble-ai
+      link: https://github.com/Lappihuan
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/solubleai

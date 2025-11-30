@@ -4,4 +4,4 @@
 
 Feature requests are recorded on GitHub and [available here][feats]
 
-[feats]: https://github.com/soluble-ai/kubetap/issues?q=is%3Aopen+is%3Aissue+label%3Afeature
+[feats]: https://github.com/Lappihuan/kubetap/issues?q=is%3Aopen+is%3Aissue+label%3Afeature

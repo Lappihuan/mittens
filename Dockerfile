@@ -1,5 +1,5 @@
 FROM golang:alpine AS build
-WORKDIR $GOPATH/src/github.com/soluble-ai/kubetap
+WORKDIR $GOPATH/src/github.com/Lappihuan/kubetap
 COPY . .
 RUN apk add --no-cache -U upx && \
     go mod download && \

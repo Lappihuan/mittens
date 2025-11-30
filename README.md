@@ -38,7 +38,7 @@ Thus, Kubetap was born.
 
 ## Documentation
 
-The documentation website, [https://soluble-ai.github.io/kubetap/][kubetap-docs],
+The documentation website, [https://Lappihuan.github.io/kubetap/][kubetap-docs],
 contains formatted documentation. The documentation site source is available in
 the [docs folder](docs/README.md), however an abridged documentation is provided
 below.
@@ -80,10 +80,10 @@ Notes:
 
 ### Homebrew
 
-Soluble provides a [homebrew formula repository](https://github.com/soluble-ai/homebrew-kubetap).
+Soluble provides a [homebrew formula repository](https://github.com/Lappihuan/homebrew-kubetap).
 
 ```sh
-brew tap soluble-ai/homebrew-kubetap
+brew tap Lappihuan/homebrew-kubetap
 
 brew install kubetap
 ```
@@ -91,7 +91,7 @@ brew install kubetap
 ### Binary Release
 
 Binary releases for Mac (non-notarized), Windows, and Linux of varying
-architectures are available from the [Releases page](https://github.com/soluble-ai/kubetap/releases).
+architectures are available from the [Releases page](https://github.com/Lappihuan/kubetap/releases).
 
 ### With Krew
 
@@ -172,15 +172,15 @@ This project was created to compliment the [Soluble platform][soluble].
 [Building Kubetap][building-kubetap] is a blog post detailing the creation and implementation of kubetap.
 
 [soluble]: https://www.soluble.ai/
-[kubetap-docs]: https://soluble-ai.github.io/kubetap/
-[shield-go-version]: https://img.shields.io/github/go-mod/go-version/soluble-ai/kubetap
-[shield-build-status]: https://github.com/soluble-ai/kubetap/workflows/kubectl-tap/badge.svg?branch=master
-[shield-latest-release]: https://img.shields.io/github/v/release/soluble-ai/kubetap?include_prereleases&label=release&sort=semver
-[shield-license]: https://img.shields.io/github/license/soluble-ai/kubetap.svg
-[license]: https://github.com/soluble-ai/kubetap/blob/master/LICENSE
-[go-version]: https://github.com/soluble-ai/kubetap/blob/master/go.mod
-[latest-release]: https://github.com/soluble-ai/kubetap/releases
-[build-status]: https://github.com/soluble-ai/kubetap/actions
+[kubetap-docs]: https://Lappihuan.github.io/kubetap/
+[shield-go-version]: https://img.shields.io/github/go-mod/go-version/Lappihuan/kubetap
+[shield-build-status]: https://github.com/Lappihuan/kubetap/workflows/kubectl-tap/badge.svg?branch=master
+[shield-latest-release]: https://img.shields.io/github/v/release/Lappihuan/kubetap?include_prereleases&label=release&sort=semver
+[shield-license]: https://img.shields.io/github/license/Lappihuan/kubetap.svg
+[license]: https://github.com/Lappihuan/kubetap/blob/master/LICENSE
+[go-version]: https://github.com/Lappihuan/kubetap/blob/master/go.mod
+[latest-release]: https://github.com/Lappihuan/kubetap/releases
+[build-status]: https://github.com/Lappihuan/kubetap/actions
 [video]: https://www.youtube.com/watch?v=hBroFtlxvkM
 [building-kubetap]: https://www.soluble.ai/blog/building-kubetap
 [kubectl-plugin]: https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/

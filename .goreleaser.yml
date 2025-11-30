@@ -59,16 +59,16 @@ brews:
   - 
     name: kubetap
     tap:
-      owner: soluble-ai
+      owner: Lappihuan
       name: homebrew-kubetap
     folder: Formula
     skip_upload: false
     download_strategy: CurlDownloadStrategy
     caveats: 'kubetap is best invoked as: $ kubectl tap'
-    homepage: 'https://github.com/soluble-ai/kubetap'
+    homepage: 'https://github.com/Lappihuan/kubetap'
     description: 'Kubetap is a kubectl plugin to interactively proxy Kubernetes Services with ease'
     custom_block: |
-      head "https://github.com/soluble-ai/kubetap.git"
+      head "https://github.com/Lappihuan/kubetap.git"
     test: |
       system "#{bin}/kubectl-tap version"
     install: |
