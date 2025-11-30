@@ -1,9 +1,9 @@
 FROM mitmproxy/mitmproxy:12.2.1
 
-# Update and install tmux in the Debian-based image
+# Update and install tmux and bash in the Debian-based image
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends tmux && \
+    apt-get install -y --no-install-recommends tmux bash && \
     rm -rf /var/lib/apt/lists/*
 
 # Ensure the directory exists and is world-writable BEFORE we switch users
@@ -16,4 +16,5 @@ RUN mkdir -p /home/mitmproxy/.mitmproxy && \
 # kubetap binary.
 
 COPY kubetap-entrypoint.sh /usr/local/bin/
+SHELL ["/bin/bash", "-c"]
 ENTRYPOINT ["kubetap-entrypoint.sh"]
