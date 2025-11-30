@@ -2,9 +2,11 @@ name: PR kubectl-tap
 on:
   pull_request:
     branches: [master]
+  push:
+    # run verify on pushes to any branch (quick feedback); keep build limited to PRs
+    branches: ['**']
 
 env:
-  # shorten repeated keys
   GOFLAGS: -mod=readonly
   GOPROXY: https://proxy.golang.org
 
@@ -12,6 +14,7 @@ jobs:
   verify:
     name: Verify (fast lint)
     runs-on: ubuntu-latest
+    # runs for both push and pull_request events
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +27,6 @@ jobs:
           go-version: '1.24'
 
       - name: Configure GOBIN and cache
-        id: gobin-cache-setup
         run: |
           echo "GOBIN=${{ github.workspace }}/.gobin" >> $GITHUB_ENV
           echo "${{ github.workspace }}/.gobin" >> $GITHUB_PATH
@@ -42,10 +44,39 @@ jobs:
       - name: Lint
         run: golangci-lint run --timeout 3m
 
+  fast-test:
+    name: Fast unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Restore Go modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Fast unit tests (short)
+        run: go test ./... -v -count=1 -short
+
   build:
     name: Build matrix
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [verify, fast-test]
+    # only run the heavy matrix build for PR events
+    if: github.event_name == 'pull_request'
     strategy:
       matrix:
         go: ['1.24', '1.25']
@@ -87,8 +118,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zsh kubectl
 
-      - name: Install developer tools (fast)
-        # install full dev tools; caching of .gobin speeds future runs
+      - name: Install developer tools (full)
         run: make deps
 
       - name: Generate code
