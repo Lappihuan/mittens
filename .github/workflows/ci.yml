@@ -39,8 +39,20 @@ jobs:
           path: ${{ github.workspace }}/.gobin
           key: ${{ runner.OS }}-gobin-${{ hashFiles('scripts/deps.sh') }}
 
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh kubectl
+
       - name: Install developer tools
-        run: make deps
+        run: |
+          # Ensure modules are present and correct before installing tools / building
+          go mod download
+          echo "--- go env ---"
+          go env
+          echo "--- go list -m all ---"
+          go list -m all
+          make deps
 
       - name: Run code generation
         run: go generate ./...
