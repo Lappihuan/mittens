@@ -35,7 +35,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.gobin
-          key: ${{ runner.OS }}-gobin-${{ hashFiles('scripts/deps.sh') }}
+          key: ${{ runner.os }}-gobin-${{ hashFiles('scripts/deps.sh') }}
 
       - name: Install golangci-lint (fast)
         run: |
@@ -111,7 +111,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.gobin
-          key: ${{ runner.OS }}-gobin-${{ matrix.go }}-${{ hashFiles('scripts/deps.sh') }}
+          key: ${{ runner.os }}-gobin-${{ matrix.go }}-${{ hashFiles('scripts/deps.sh') }}
 
       - name: Install system packages
         run: |

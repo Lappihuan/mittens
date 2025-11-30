@@ -43,7 +43,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.gobin
-        key: ${{ runner.OS }}-gobin-${{ hashFiles('scripts/deps.sh') }}
+        key: ${{ runner.os }}-gobin-${{ hashFiles('scripts/deps.sh') }}
 
     - name: Install system packages
       run: |
@@ -76,8 +76,7 @@ jobs:
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - 
-      name: Build binary and push to GCR
+    - name: Build binary and push to GCR
       uses: docker/build-push-action@v6
       with:
         path: .
@@ -98,8 +97,7 @@ jobs:
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - 
-      name: Build binary and push to GCR
+    - name: Build binary and push to GCR
       uses: docker/build-push-action@v6
       with:
         path: .
@@ -109,8 +107,7 @@ jobs:
         registry: gcr.io
         repository: soluble-oss/kubectl-tap
         tags: alpine
-
-  release:
+    - name: Setup Go
     timeout-minutes: 15
     if: startsWith(github.ref, 'refs/tags/')
     needs: [build, docker-build-scratch, docker-build-alpine]
