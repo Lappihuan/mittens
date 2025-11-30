@@ -1,3 +1,5 @@
+version: 1
+
 run:
   tests: false
   timeout: 5m
