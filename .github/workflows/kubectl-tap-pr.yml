@@ -26,6 +26,9 @@ jobs:
         with:
           go-version: '1.25'
 
+      - name: Export GOROOT for tools
+        run: echo "GOROOT=$(go env GOROOT)" >> $GITHUB_ENV
+
       - name: Configure GOBIN and cache
         run: |
           echo "GOBIN=${{ github.workspace }}/.gobin" >> $GITHUB_ENV
@@ -46,6 +49,17 @@ jobs:
         uses: golangci/golangci-lint-action@v4
         with:
           version: v1.50.0
+
+      - name: Use workspace-local Go cache and GOPATH
+        run: |
+          GOCACHE="${{ github.workspace }}/.cache/go-build"
+          rm -rf "$GOCACHE" || true
+          mkdir -p "$GOCACHE"
+          echo "GOCACHE=$GOCACHE" >> $GITHUB_ENV
+          GOPATH="${{ github.workspace }}/.gopath"
+          mkdir -p "$GOPATH"
+          echo "GOPATH=$GOPATH" >> $GITHUB_ENV
+          echo "Using GOCACHE=$GOCACHE and GOPATH=$GOPATH"
 
       - name: Lint
         run: golangci-lint run --timeout 3m
