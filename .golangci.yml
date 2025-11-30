@@ -2,9 +2,6 @@ version: "2"
 
 run:
   tests: false
-  skip-dirs:
-    - hack
-    - proxies
 
 linters:
   default: all
@@ -19,4 +16,8 @@ linters:
     - gochecknoglobals
     - nlreturn
     - wrapcheck
+  exclusions:
+    paths:
+      - hack
+      - proxies
 
