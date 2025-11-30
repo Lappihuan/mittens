@@ -5,12 +5,14 @@ set -o pipefail
 set -o nounset
 
 # HACK: this fixes permission issues
-# Create the .mitmproxy directory if it doesn't exist
-mkdir -p /home/mitmproxy/.mitmproxy
-
-# Only copy the config file if it exists
-if [ -f /home/mitmproxy/config/config.yaml ]; then
-  cp /home/mitmproxy/config/config.yaml /home/mitmproxy/.mitmproxy/config.yaml
+# Ensure the .mitmproxy directory exists and is writable
+# Note: We skip this if we don't have permissions, as the directory should 
+# already exist from the Dockerfile
+if [ -d /home/mitmproxy/.mitmproxy ] && [ -w /home/mitmproxy/.mitmproxy ]; then
+  # Only copy the config file if it exists and we have write access
+  if [ -f /home/mitmproxy/config/config.yaml ] && [ -r /home/mitmproxy/config/config.yaml ]; then
+    cp /home/mitmproxy/config/config.yaml /home/mitmproxy/.mitmproxy/config.yaml
+  fi
 fi
 
 prog=${1}
