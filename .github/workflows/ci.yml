@@ -21,6 +21,12 @@ jobs:
       - name: Export GOROOT for tools
         run: echo "GOROOT=$(go env GOROOT)" >> $GITHUB_ENV
 
+      - name: Clean stale Go caches (prevent tar conflicts)
+        run: |
+          go clean -cache -modcache || true
+          rm -rf ~/.cache/go-build || true
+          rm -rf ~/go/pkg/mod || true
+
       - name: Restore Go cache
         uses: actions/cache@v4
         with:
@@ -47,11 +53,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zsh kubectl
 
-      - name: Clean Go caches
-        run: |
-          go clean -cache -modcache || true
-          rm -rf ~/.cache/go-build || true
-
       - name: Install developer tools
         run: |
           # Ensure modules are present and correct before installing tools / building
@@ -64,7 +65,7 @@ jobs:
       - name: Install golangci-lint (official binary)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.50.0
+          version: v2.57.0
 
       - name: Use workspace-local Go cache and GOPATH
         run: |
