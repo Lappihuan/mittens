@@ -16,6 +16,9 @@ linters:
     - gochecknoglobals
     - nlreturn
     - wrapcheck
+    - cyclop
+    - depguard
+    - exhaustruct
   exclusions:
     paths:
       - hack
