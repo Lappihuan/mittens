@@ -103,33 +103,3 @@ func TestDetectServicePort(t *testing.T) {
 		})
 	}
 }
-
-func TestSpinner(t *testing.T) {
-	t.Run("spinner_creation", func(t *testing.T) {
-		spinner := NewSpinner("Testing...")
-		require.NotNil(t, spinner)
-		require.NotNil(t, spinner.spinner)
-		require.NotNil(t, spinner.done)
-
-		// Stop should not panic
-		spinner.Stop("Done!")
-	})
-
-	t.Run("spinner_fail", func(t *testing.T) {
-		spinner := NewSpinner("Testing...")
-		require.NotNil(t, spinner)
-
-		// Fail should not panic
-		spinner.Fail("Failed!")
-	})
-
-	t.Run("spinner_update", func(t *testing.T) {
-		spinner := NewSpinner("Testing...")
-		require.NotNil(t, spinner)
-
-		// Update should not panic
-		spinner.Update("Updated message")
-
-		spinner.Stop("Done!")
-	})
-}

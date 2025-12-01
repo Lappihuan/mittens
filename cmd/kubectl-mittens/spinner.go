@@ -14,6 +14,8 @@
 package main
 
 import (
+	"context"
+	"sync"
 	"time"
 
 	"github.com/pterm/pterm"
@@ -23,35 +25,59 @@ import (
 type Spinner struct {
 	spinner *pterm.SpinnerPrinter
 	done    chan bool
+	mu      sync.RWMutex
+	ctx     context.Context
+	cancel  context.CancelFunc
 }
 
 // NewSpinner creates a new spinner with the given message.
 func NewSpinner(message string) *Spinner {
+	ctx, cancel := context.WithCancel(context.Background())
 	spinner, _ := pterm.DefaultSpinner.Start(message)
+	// Give the spinner goroutine time to start
+	time.Sleep(10 * time.Millisecond)
 	return &Spinner{
 		spinner: spinner,
 		done:    make(chan bool, 1),
+		mu:      sync.RWMutex{},
+		ctx:     ctx,
+		cancel:  cancel,
 	}
 }
 
 // Stop stops the spinner and displays a success message.
 func (s *Spinner) Stop(message string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.spinner != nil {
+		s.cancel()
 		_ = s.spinner.Stop()
+		// Give the spinner goroutine time to fully stop
+		time.Sleep(10 * time.Millisecond)
 		pterm.Success.Println(message)
 	}
 }
 
 // Fail stops the spinner and displays a failure message.
 func (s *Spinner) Fail(message string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.spinner != nil {
+		s.cancel()
 		_ = s.spinner.Stop()
+		// Give the spinner goroutine time to fully stop
+		time.Sleep(10 * time.Millisecond)
 		pterm.Error.Println(message)
 	}
 }
 
 // Update updates the spinner text.
 func (s *Spinner) Update(message string) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	if s.spinner != nil {
 		s.spinner.UpdateText(message)
 	}
