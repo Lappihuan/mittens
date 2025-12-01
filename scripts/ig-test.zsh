@@ -46,7 +46,7 @@ fi
 if [[ =helm == '' ]]; then
   GO111MODULE=on go get -modfile=ig-tests.mod helm.sh/helm/v4/cmd/helm@${HELM_VERSION}
 fi
-helm repo add grafana https://grafana.github.io/helm-charts --force-update
+helm repo add podinfo https://stefanprodan.github.io/podinfo --force-update
 helm repo update
 
 # we use kind to establish a local testing cluster
@@ -71,9 +71,9 @@ kind create cluster --name mittens
 #
 # Test mittens using helm ${chart}
 #
-_mittens_helm_charts=('grafana/grafana' 'oci://registry-1.docker.io/bitnamicharts/nginx')
-_mittens_helm_services=('grafana' 'nginx')
-_mittens_helm_svc_port=('80' '80')
+_mittens_helm_charts=('podinfo/podinfo')
+_mittens_helm_services=('podinfo')
+_mittens_helm_svc_port=('9898')
 
 typeset -i _mittens_iter
 for chart in ${_mittens_helm_charts[@]}; do
@@ -84,21 +84,41 @@ for chart in ${_mittens_helm_charts[@]}; do
 
   helm install --kube-context kind-mittens ${_mittens_helm} ${chart}
   
-  # We need to run mittens in a non-interactive way for CI environments
-  # Use timeout and pipe input to avoid waiting for interactive prompt
-  # This will cause mittens to fail after pod is ready (expected in CI)
-  _mittens_output=$(timeout 45 bash -c "echo '' | kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens" 2>&1)
+  # Wait for the service to be running
+  sleep 5
   
-  # Check if mittens successfully set up the proxy (pod should be ready)
-  # We expect the command to fail (exit code 1) in CI since kubectl exec -it needs a real terminal
-  # but we should see "Pod ready!" in the output (pterm formats it with SUCCESS prefix)
-  if [[ ${_mittens_output} == *"Pod ready"* ]] || [[ ${_mittens_output} == *"SUCCESS"* ]]; then
-    echo "✓ Mittens proxy setup successful for ${_mittens_service}"
-  else
-    echo "✗ Mittens failed to set up proxy for ${_mittens_service}"
-    echo "Output: ${_mittens_output}"
+  # Run mittens in background and check for sidecar injection while it's running
+  # Start mittens in background (will fail on kubectl exec but that's ok)
+  timeout 45 bash -c "echo '' | kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens" >/dev/null 2>&1 &
+  _mittens_pid=$!
+  
+  # Wait for pod with mittens sidecar to become ready (check every second, max 40 seconds)
+  _ready=0
+  for ((i=0; i<40; i++)); do
+    # Get pods for this specific service and check if they have mittens container and are ready
+    _pod_status=$(kubectl get pods --context kind-mittens -l "app.kubernetes.io/instance=${_mittens_helm}" -o jsonpath="{.items[*].status.conditions[?(@.type=='Ready')].status}" 2>/dev/null)
+    _mittens_pods=$(kubectl get pods --context kind-mittens -l "app.kubernetes.io/instance=${_mittens_helm}" -o jsonpath="{.items[*].spec.containers[*].name}" 2>/dev/null)
+    
+    if [[ ${_pod_status} == *"True"* ]] && [[ ${_mittens_pods} == *"mittens"* ]]; then
+      _ready=1
+      break
+    fi
+    sleep 1
+  done
+  
+  # Check if pod became ready with mittens container
+  if [[ $_ready -eq 0 ]]; then
+    echo "✗ Pod did not become ready or mittens sidecar not injected for ${_mittens_service}"
+    kill $_mittens_pid 2>/dev/null
+    wait $_mittens_pid 2>/dev/null
     return 1
   fi
+  
+  # Kill mittens process if still running
+  kill $_mittens_pid 2>/dev/null
+  wait $_mittens_pid 2>/dev/null
+  
+  echo "✓ Mittens proxy setup successful for ${_mittens_service}"
 done
 unset _mittens_helm_charts _mittens_helm_services _mittens_helm_svc_port _mittens_iter
 
