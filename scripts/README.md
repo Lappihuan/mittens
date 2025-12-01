@@ -12,10 +12,7 @@ package.
 | ---                   | ---                                                                 |
 | `build.zsh`           | meta build script, excluding container builds and integration tests |
 | `build-mitmproxy.zsh` | builds the mitmproxy container                                      |
-| `build-mittens.zsh`   | builds the kubectl-mittens binary |
-| `docs-build.zsh`      | builds the static files for gh-pages                                |
-| `docs-serve.zsh`      | interactive local docs served by mkdocs                             |
-| `images.zsh`          | strip metadata and perform lossless compression                     |
+| `build-mittens.zsh`   | builds the kubectl-mittens binary                                   |
 | `test.zsh`            | unit tests                                                          |
 | `ig-test.zsh`         | integration tests                                                   |
 | `_pre.zsh`            | run by other scripts - handles output formatting and PWD storage    |

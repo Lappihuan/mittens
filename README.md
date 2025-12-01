@@ -174,19 +174,28 @@ Mittens integrates with [k9s](https://k9scli.io/) for quick access from the term
 
 ### Installation
 
-1. Copy the mittens plugin to your k9s config:
+1. Install mittens using one of the methods above
 
-```sh
-cat docs/k9s-plugin.yaml >> ~/.k9s/plugins.yaml
+2. Configure k9s plugin by adding this to `~/.k9s/plugins.yaml`:
+
+```yaml
+plugins:
+  mittens:
+    shortCut: Ctrl-M
+    description: "mittens - tap into service traffic"
+    scopes:
+      - services
+      - pods
+    action: exec
+    command: mittens
+    background: false
 ```
 
-2. Restart k9s
+3. Restart k9s
 
 ### Usage
 
 Navigate to **Services** or **Pods** view and press `Ctrl+M` to enable mittens for the selected service or pod.
-
-For details, see [K9s Integration Guide](docs/getting_started/k9s-integration.md).
 
 ## Architecture
 

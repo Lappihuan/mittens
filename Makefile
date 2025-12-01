@@ -32,18 +32,6 @@ lint: zsh
 deps: zsh
 	./scripts/deps.sh
 
-.PHONY: images
-images: zsh
-	./scripts/images.zsh
-
-.PHONY: docs-build
-docs-build: zsh
-	./scripts/docs-build.zsh
-
-.PHONY: docs
-docs: zsh
-	./scripts/docs-serve.zsh
-
 .PHONY: zsh
 zsh:
 ifndef ZSH
