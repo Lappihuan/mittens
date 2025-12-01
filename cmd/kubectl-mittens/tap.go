@@ -323,13 +323,17 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 		}()
 
 		podsClient := client.CoreV1().Pods(namespace)
-		s := make(chan struct{})
+		s := make(chan struct{}, 100) // buffered channel to prevent goroutines from blocking
 		defer close(s)
 		go func() {
 			// Skip the first few checks to give pods time to come up.
 			// Race: If the first few cycles are not skipped, the condition status may be "Ready".
 			time.Sleep(5 * time.Second)
-			s <- struct{}{}
+			// Use non-blocking send to prevent panic if channel is closed
+			select {
+			case s <- struct{}{}:
+			default:
+			}
 		}()
 
 		// Use spinner instead of progress bar
@@ -375,9 +379,11 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 						}
 					}
 				}
-				go func() {
-					s <- struct{}{}
-				}()
+				// Use non-blocking send to prevent panic if channel is closed
+				select {
+				case s <- struct{}{}:
+				default:
+				}
 			}
 		}
 		if !ready {
