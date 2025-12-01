@@ -1,12 +1,12 @@
-project_name: kubetap
+project_name: mittens
 env:
 - CGO_ENABLED=0
 before:
   hooks:
     - go mod download
 builds:
-- main: ./cmd/kubectl-tap/
-  binary: kubectl-tap
+- main: ./cmd/kubectl-mittens/
+  binary: kubectl-mittens
   goos:
     - linux
     - darwin
@@ -44,7 +44,7 @@ archives:
     - goos: windows
       format: zip
 checksum:
-  name_template: 'kubetap_checksums.txt'
+  name_template: 'mittens_checksums.txt'
 snapshot:
   name_template: '{{ .Tag }}-next'
 changelog:
@@ -55,21 +55,3 @@ changelog:
     - '^test:'
     - '^scripts:'
     - '^proxies:'
-#brews:
-#  - 
-#    name: kubetap
-#    tap:
-#      owner: Lappihuan
-#      name: homebrew-kubetap
-#    folder: Formula
-#    skip_upload: false
-#    download_strategy: CurlDownloadStrategy
-#    caveats: 'kubetap is best invoked as: $ kubectl tap'
-#    homepage: 'https://github.com/Lappihuan/kubetap'
-#    description: 'Kubetap is a kubectl plugin to interactively proxy Kubernetes Services with ease'
-#    custom_block: |
-#      head "https://github.com/Lappihuan/kubetap.git"
-#    test: |
-#      system "#{bin}/kubectl-tap version"
-#    install: |
-#      bin.install "./kubectl-tap"

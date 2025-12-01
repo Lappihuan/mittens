@@ -13,8 +13,8 @@ RUN mkdir -p /home/mitmproxy/.mitmproxy && \
 
 # Hijack the mitmproxy entrypoint (docker-entrypoint.sh) so that
 # configuration can be built from within the container using the
-# kubetap binary.
+# mittens binary.
 
-COPY kubetap-entrypoint.sh /usr/local/bin/
+COPY mittens-entrypoint.sh /usr/local/bin/
 SHELL ["/bin/bash", "-c"]
-ENTRYPOINT ["kubetap-entrypoint.sh"]
+ENTRYPOINT ["mittens-entrypoint.sh"]

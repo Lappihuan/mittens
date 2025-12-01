@@ -1,36 +1,36 @@
 apiVersion: krew.googlecontainertools.github.com/v1alpha2
 kind: Plugin
 metadata:
-  name: tap
+  name: mittens
 spec:
   version: {{ .TagName }}
-  homepage: https://Lappihuan.github.io/kubetap/
-  shortDescription: "Interactively proxy Kubernetes Services with ease"
+  homepage: https://lappihuan.github.io/mittens/
+  shortDescription: "Interactively proxy Kubernetes Services with mitmproxy TUI"
   description: |
     Interactively proxy Kubernetes Services by deploying
-    intercepting proxy sidecars.
+    mitmproxy intercepting proxy sidecars.
   platforms:
   - selector:
       matchLabels:
         os: darwin
         arch: amd64
-    {{ addURIAndSha "https://github.com/Lappihuan/kubetap/releases/download/{{ .TagName }}/kubetap_{{ .TagName }}_Darwin_x86_64.tar.gz" .TagName }}
-    bin: kubectl-tap
+    {{ addURIAndSha "https://github.com/Lappihuan/mittens/releases/download/{{ .TagName }}/mittens_{{ .TagName }}_Darwin_x86_64.tar.gz" .TagName }}
+    bin: kubectl-mittens
   - selector:
       matchLabels:
         os: windows
         arch: amd64
-    {{ addURIAndSha "https://github.com/Lappihuan/kubetap/releases/download/{{ .TagName }}/kubetap_{{ .TagName }}_Windows_x86_64.zip" .TagName }}
-    bin: kubectl-tap.exe
+    {{ addURIAndSha "https://github.com/Lappihuan/mittens/releases/download/{{ .TagName }}/mittens_{{ .TagName }}_Windows_x86_64.zip" .TagName }}
+    bin: kubectl-mittens.exe
   - selector:
       matchLabels:
         os: linux
         arch: amd64
-    {{ addURIAndSha "https://github.com/Lappihuan/kubetap/releases/download/{{ .TagName }}/kubetap_{{ .TagName }}_Linux_x86_64.tar.gz" .TagName }}
-    bin: kubectl-tap
+    {{ addURIAndSha "https://github.com/Lappihuan/mittens/releases/download/{{ .TagName }}/mittens_{{ .TagName }}_Linux_x86_64.tar.gz" .TagName }}
+    bin: kubectl-mittens
   - selector:
       matchLabels:
         os: linux
         arch: arm64
-    {{ addURIAndSha "https://github.com/Lappihuan/kubetap/releases/download/{{ .TagName }}/kubetap_{{ .TagName }}_Linux_arm64.tar.gz" .TagName }}
-    bin: kubectl-tap
+    {{ addURIAndSha "https://github.com/Lappihuan/mittens/releases/download/{{ .TagName }}/mittens_{{ .TagName }}_Linux_arm64.tar.gz" .TagName }}
+    bin: kubectl-mittens

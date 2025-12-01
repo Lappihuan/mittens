@@ -11,7 +11,7 @@ KIND_VERSION=v0.30.0
 HELM_VERSION=v4.0.1
 
 # modfile hack to avoid package collisions and work around azure go-autorest bug
-print "module kubetap-ig-tests
+print "module mittens-ig-tests
 
 go 1.13
 
@@ -42,91 +42,91 @@ GO111MODULE=on go get -modfile=ig-tests.mod sigs.k8s.io/kind@${KIND_VERSION}
 # Establish a local testing cluster
 #
 
-# remove stale kubetap clusters if they exist
-_kubetap_kind_clusters=$(kind get clusters 2>&1)
-if [[ ${_kubetap_kind_clusters} == *'kubetap'* ]]; then
-  kind delete cluster --name kubetap
+# remove stale mittens clusters if they exist
+_mittens_kind_clusters=$(kind get clusters 2>&1)
+if [[ ${_mittens_kind_clusters} == *'mittens'* ]]; then
+  kind delete cluster --name mittens
 fi
-unset _kubetap_kind_clusters
+unset _mittens_kind_clusters
 
 # catch sigints and exits to delete the cluster, keeping the last exit code
-trap '{ e=${?}; sleep 1; kind delete cluster --name kubetap ; exit ${e} }' SIGINT SIGTERM EXIT
-kind create cluster --name kubetap
+trap '{ e=${?}; sleep 1; kind delete cluster --name mittens ; exit ${e} }' SIGINT SIGTERM EXIT
+kind create cluster --name mittens
 
 #
 # Build and load the mitmproxy sidecar image into the kind cluster
 #
 echo "Building and loading mitmproxy sidecar image..."
-docker build -t kubetap-mitmproxy:latest -f ./proxies/mitmproxy/Dockerfile ./proxies/mitmproxy/
-kind load docker-image kubetap-mitmproxy:latest --name kubetap
+docker build -t mittens-mitmproxy:latest -f ./proxies/mitmproxy/Dockerfile ./proxies/mitmproxy/
+kind load docker-image mittens-mitmproxy:latest --name mittens
 
 #
-# Test kubetap using helm ${chart}
+# Test mittens using helm ${chart}
 #
-_kubetap_helm_charts=('grafana/grafana' 'oci://registry-1.docker.io/bitnamicharts/nginx')
-_kubetap_helm_services=('grafana' 'nginx')
-_kubetap_helm_svc_port=('80' '80')
+_mittens_helm_charts=('grafana/grafana' 'oci://registry-1.docker.io/bitnamicharts/nginx')
+_mittens_helm_services=('grafana' 'nginx')
+_mittens_helm_svc_port=('80' '80')
 
-typeset -i _kubetap_iter
-for chart in ${_kubetap_helm_charts[@]}; do
-  ((_kubetap_iter+=1))
-  _kubetap_helm=${chart:t}
-  _kubetap_port=${_kubetap_helm_svc_port[${_kubetap_iter}]}
-  _kubetap_service=${_kubetap_helm_services[${_kubetap_iter}]}
+typeset -i _mittens_iter
+for chart in ${_mittens_helm_charts[@]}; do
+  ((_mittens_iter+=1))
+  _mittens_helm=${chart:t}
+  _mittens_port=${_mittens_helm_svc_port[${_mittens_iter}]}
+  _mittens_service=${_mittens_helm_services[${_mittens_iter}]}
 
-  helm install --kube-context kind-kubetap ${_kubetap_helm} ${chart}
-  kubectl tap on ${_kubetap_service} -p${_kubetap_port} --context kind-kubetap --image kubetap-mitmproxy:latest
+  helm install --kube-context kind-mittens ${_mittens_helm} ${chart}
+  kubectl mittens on ${_mittens_service} -p${_mittens_port} --context kind-mittens --image mittens-mitmproxy:latest
   sleep 20
 
-  _kubetap_ready_state=""
+  _mittens_ready_state=""
   for i in {0..20}; do
     sleep 6
-    _kubetap_pod=($(kubectl --context kind-kubetap get pods -ojsonpath='{.items[*].metadata.name}'))
-    if (( ${#_kubetap_pod} != 1 )); then
+    _mittens_pod=($(kubectl --context kind-mittens get pods -ojsonpath='{.items[*].metadata.name}'))
+    if (( ${#_mittens_pod} != 1 )); then
       continue
     fi
-    _kubetap_ready_state=$(kubectl --context kind-kubetap get pod ${_kubetap_pod} -ojsonpath='{.status.containerStatuses[*].ready}')
-    if [[ ${_kubetap_ready_state} == 'true true' ]]; then
+    _mittens_ready_state=$(kubectl --context kind-mittens get pod ${_mittens_pod} -ojsonpath='{.status.containerStatuses[*].ready}')
+    if [[ ${_mittens_ready_state} == 'true true' ]]; then
       break
     fi
   done
-  if [[ ${_kubetap_ready_state} != 'true true' ]]; then
+  if [[ ${_mittens_ready_state} != 'true true' ]]; then
     echo "container did not come up within 90 seconds"
     echo ""
     echo "=== DEBUG INFO ==="
     echo "Pod status:"
-    kubectl --context kind-kubetap get pods -o wide
+    kubectl --context kind-mittens get pods -o wide
     echo ""
     echo "Pod events:"
-    kubectl --context kind-kubetap describe pod ${_kubetap_pod}
+    kubectl --context kind-mittens describe pod ${_mittens_pod}
     echo ""
     echo "Pod logs (all containers):"
-    for _container in $(kubectl --context kind-kubetap get pod ${_kubetap_pod} -o jsonpath='{.spec.containers[*].name}'); do
+    for _container in $(kubectl --context kind-mittens get pod ${_mittens_pod} -o jsonpath='{.spec.containers[*].name}'); do
       echo "--- Container: ${_container} ---"
-      kubectl --context kind-kubetap logs ${_kubetap_pod} -c ${_container} 2>&1 || echo "No logs available"
+      kubectl --context kind-mittens logs ${_mittens_pod} -c ${_container} 2>&1 || echo "No logs available"
     done
     echo "=================="
     echo ""
     return 1
   fi
-  unset _kubetap_pod _kubetap_ready_state i
+  unset _mittens_pod _mittens_ready_state i
 
   sleep 1
-  kubectl port-forward svc/${_kubetap_service} -n default 4000:${_kubetap_port} &
-  _kubetap_pf_pid=${!}
+  kubectl port-forward svc/${_mittens_service} -n default 4000:${_mittens_port} &
+  _mittens_pf_pid=${!}
   sleep 5
 
   # check that we can reach the application port
   curl -v http://127.0.0.1:4000 || return 1
-  kill ${_kubetap_pf_pid}
-  unset _kubetap_pf_pid
+  kill ${_mittens_pf_pid}
+  unset _mittens_pf_pid
 
   # cleanup test
-  kubectl tap off ${_kubetap_service} --context kind-kubetap
-  helm delete --kube-context kind-kubetap ${_kubetap_helm}
+  kubectl mittens off ${_mittens_service} --context kind-mittens
+  helm delete --kube-context kind-mittens ${_mittens_helm}
 
-  unset _kubetap_helm _kubetap_port _kubetap_service
+  unset _mittens_helm _mittens_port _mittens_service
 done
-unset _kubetap_helm_charts _kubetap_helm_services _kubetap_helm_svc_port _kubetap_iter
+unset _mittens_helm_charts _mittens_helm_services _mittens_helm_svc_port _mittens_iter
 
 #source ${script_dir}/_post.zsh

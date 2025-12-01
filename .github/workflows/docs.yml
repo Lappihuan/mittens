@@ -1,39 +1,37 @@
-name: Docs
+name: docs
 
 on:
   push:
-    branches: [ master ]
-    paths:
-      - 'docs/**'
+    branches: [master]
+    paths: [docs/**, mkdocs.yml]
 
 jobs:
   deploy:
+    name: Build and Deploy Docs
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-
-      - name: Install mkdocs
+          python-version: "3.x"
+      
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          pip install --upgrade pip setuptools wheel
           pip install mkdocs mkdocs-material
-
+      
       - name: Build site
         run: mkdocs build
-
+      
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
           publish_branch: gh-pages
-          user_name: kubetap-bot
+          user_name: mittens-bot
           user_email: noreply@github.com
  

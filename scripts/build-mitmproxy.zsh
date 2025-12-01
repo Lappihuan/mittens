@@ -3,7 +3,7 @@
 script_dir=${0:A:h}
 source ${script_dir}/_pre.zsh
 
-image="kubetap-mitmproxy:dev"
+image="mittens-mitmproxy:dev"
 
 cd ./proxies/mitmproxy/
 docker build --pull --no-cache -t ${image} .

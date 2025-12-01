@@ -2,10 +2,12 @@
 
 ## Report a vulnerability
 
-If you would like to report a vulnerability in kubetap, please create a
-[vulnerability report on GitHub](https://github.com/Lappihuan/kubetap/security/advisories)
-or send an email with the subject line "Kubetap Vulnerability" to:
+If you would like to report a vulnerability in mittens, please create a
+[vulnerability report on GitHub](https://github.com/Lappihuan/mittens/security/advisories)
+or send an email with the subject line "Mittens Vulnerability" to:
 
-* Matt Hamilton - bWF0dEBzb2x1YmxlLmFpCg==
+* Maintainer - noreply@github.com
 
-We follow our [Vulnerability Disclosure Policy](https://www.soluble.ai/vulnerability-disclosure-policy).
+For original kubetap security concerns, see [ATTRIBUTION.md](ATTRIBUTION.md).
+
+We follow responsible disclosure practices and will respond to security reports promptly.

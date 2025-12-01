@@ -1,4 +1,4 @@
-module github.com/Lappihuan/kubetap
+module github.com/Lappihuan/mittens
 
 go 1.25
 

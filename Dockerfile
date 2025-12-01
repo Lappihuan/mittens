@@ -1,10 +1,10 @@
 FROM golang:1.25-alpine AS build
-WORKDIR $GOPATH/src/github.com/Lappihuan/kubetap
+WORKDIR $GOPATH/src/github.com/Lappihuan/mittens
 COPY . .
 RUN apk add --no-cache -U upx && \
     go mod download && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-w -s" -o /go/bin/kubectl-tap ./cmd/kubectl-tap && \
-    upx /go/bin/kubectl-tap
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-w -s" -o /go/bin/kubectl-mittens ./cmd/kubectl-mittens && \
+    upx /go/bin/kubectl-mittens
 
 FROM alpine:3.22 AS alpine
 WORKDIR /usr/share/zoneinfo
@@ -13,8 +13,8 @@ RUN apk -U --no-cache add tzdata zip ca-certificates && \
 
 FROM scratch
 WORKDIR /app
-COPY --from=build /go/bin/kubectl-tap .
+COPY --from=build /go/bin/kubectl-mittens .
 ENV ZONEINFO=/zoneinfo.zip
 COPY --from=alpine /zoneinfo.zip /
 COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-ENTRYPOINT ["./kubectl-tap"]
+ENTRYPOINT ["./kubectl-mittens"]

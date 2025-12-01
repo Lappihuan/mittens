@@ -1,8 +1,8 @@
 ---
 name: Bug Report
-about: Create a bug report for kubetap
+about: Create a bug report for mittens
 title: ''
-labels: 'bug/kubetap'
+labels: 'bug/mittens'
 assignees: ''
 
 ---

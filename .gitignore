@@ -7,9 +7,9 @@
 *.test
 *.out
 .DS_Store
-cmd/kubectl-tap/kubectl-tap
-kubectl-tap
-!kubectl-tap/
+cmd/kubectl-mittens/kubectl-mittens
+kubectl-mittens
+!cmd/kubectl-mittens/
 dist/*
 ci.mod
 ci.sum

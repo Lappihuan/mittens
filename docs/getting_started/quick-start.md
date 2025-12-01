@@ -1,53 +1,127 @@
 # Quick Start
 
-## Selecting a target
+Get Mittens up and running in 5 minutes.
 
-After you have successfully [installed kubetap](installation.md), find a Service
-you'd like to tap. In this example, we use [ArgoCD](https://argoproj.github.io/)
-as the target.
+## Installation
 
-```sh
-$ kubectl get svc -n argocd
-NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
-argocd-dex-server       ClusterIP   10.43.152.9     <none>        5556/TCP,5557/TCP   5d20h
-argocd-metrics          ClusterIP   10.43.44.33     <none>        8082/TCP            5d20h
-argocd-redis            ClusterIP   10.43.209.196   <none>        6379/TCP            5d20h
-argocd-repo-server      ClusterIP   10.43.192.56    <none>        8081/TCP,8084/TCP   5d20h
-argocd-server-metrics   ClusterIP   10.43.220.237   <none>        8083/TCP            5d20h
-argocd-server           ClusterIP   10.43.118.109   <none>        80/TCP,443/TCP      5d20h
-```
-
-## Tapping the service
-
-The proxy container (mitmproxy by default) runs as a sidecar, keeping network
-traffic within the cluster. mitmproxy runs in an interactive terminal mode for
-real-time packet inspection and modification.
-
-For this example, we target the HTTPS `argocd-server` service:
+### Quick Install
 
 ```sh
-$ kubectl tap on -n argocd -p 443 --https argocd-server --port-forward
-Establishing port-forward tunnels to service...
+# Using kubectl krew
+kubectl krew install mittens
 
-Port-Forwards:
-
-  argocd-server - https://127.0.0.1:4000
-
+# Or download binary from releases
+# https://github.com/Lappihuan/mittens/releases
 ```
 
-## Connecting to the proxy
-
-With mitmproxy running as a terminal UI in a tmux session, you can interact with it directly.
-
-To attach to the mitmproxy terminal:
+### Verify Installation
 
 ```sh
-# Find the pod name (usually the target deployment + kubetap suffix)
-kubectl get pods -n argocd | grep argocd-server
-
-# Attach to the mitmproxy tmux session
-kubectl exec -it <pod-name> -c kubetap -- tmux attach-session -t mitmproxy
+kubectl mittens version
+# Output: version: vX.Y.Z, commit: ..., built at: ...
 ```
+
+## Your First Tap
+
+### Step 1: Deploy a Sample Service
+
+For this example, we'll use a simple service. If you already have a service, skip to Step 2.
+
+```sh
+# Create a simple nginx deployment
+kubectl create deployment web --image=nginx
+kubectl expose deployment web --port=80 --target-port=80
+```
+
+### Step 2: Enable Mittens
+
+```sh
+kubectl mittens on web -p 80
+```
+
+This will:
+1. Deploy a mitmproxy sidecar container
+2. Patch the service to route traffic through mittens
+3. Open an interactive mitmproxy terminal session
+
+### Step 3: Inspect Traffic
+
+Once mittens starts, you'll see the mitmproxy TUI with requests flowing through.
+
+**Keyboard shortcuts in mitmproxy:**
+- Arrow Up/Down: Navigate through requests
+- Enter: View request/response details
+- q: Quit mitmproxy
+- Tab: Switch between panels
+- ?: Show all commands
+
+### Step 4: Exit and Automatic Cleanup
+
+```sh
+# In mitmproxy, press 'q' to quit
+# or Ctrl+C to exit the terminal
+
+# Mittens automatically:
+# - Removes the sidecar container
+# - Restores service routing
+# - Cleans up all configurations
+```
+
+Verify cleanup:
+
+```sh
+kubectl mittens list
+# Should show no tapped services
+```
+
+## Common Tasks
+
+### Tap an HTTPS Service
+
+```sh
+kubectl mittens on secure-api -n default -p 443 --https
+```
+
+### Tap a Service on a Custom Port
+
+```sh
+kubectl mittens on my-service -n production -p 9000
+```
+
+### View All Active Taps
+
+```sh
+kubectl mittens list
+```
+
+### Disable Mittens Early
+
+```sh
+kubectl mittens off web -n default
+```
+
+## Troubleshooting
+
+### Service Not Found
+
+**Solution:** Verify the service name and namespace:
+```sh
+kubectl get svc -n default
+```
+
+### Pod Not Ready
+
+This is normal. Mittens waits up to 90 seconds. Check pod status:
+```sh
+kubectl get pods -n default
+```
+
+## Next Steps
+
+- Read the [Usage Guide](usage.md) for detailed command reference
+- Set up [K9s Integration](k9s-integration.md) for quick tapping from k9s dashboard
+
+Happy debugging!
 
 Once attached, you can:
 - View live HTTP/HTTPS traffic flowing through the proxy
