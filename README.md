@@ -17,7 +17,6 @@ kubectl mittens SERVICE [OPTIONS]
 kubectl mittens my-service -n my-namespace          # Auto-detect port
 kubectl mittens my-service -p 8080                  # Explicit port
 kubectl mittens my-service -p 443 --https           # HTTPS service
-kubectl mittens my-service --command-args "mitmweb" # Custom mitmproxy
 ```
 
 **Options:**
@@ -31,7 +30,7 @@ kubectl mittens my-service --command-args "mitmweb" # Custom mitmproxy
 1. Deploy mitmproxy sidecar to service pods
 2. Redirect traffic through mitmproxy
 3. Open interactive mitmproxy TUI
-4. Auto-cleanup on exit (press `q` or Ctrl+C)
+4. Auto-cleanup on exit (Ctrl+C)
 
 ## Installation
 
@@ -60,13 +59,6 @@ plugins:
       - -n
       - $NAMESPACE
 ```
-
-Then press `Ctrl-T` on a Service in k9s.
-
-## Requirements
-
-- kubectl 1.19+
-- Kubernetes 1.19+
 
 ## License
 
