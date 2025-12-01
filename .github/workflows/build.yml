@@ -71,8 +71,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mittens-mitmproxy:latest
-            ghcr.io/${{ github.repository_owner }}/mittens-mitmproxy:${{ github.sha }}
+            ghcr.io/lappihuan/mittens-mitmproxy:latest
+            ghcr.io/lappihuan/mittens-mitmproxy:${{ github.sha }}
       
       - uses: docker/build-push-action@v6
         with:
@@ -80,8 +80,8 @@ jobs:
           dockerfile: Dockerfile.alpine
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mittens-mitmproxy:alpine
-            ghcr.io/${{ github.repository_owner }}/mittens-mitmproxy:alpine-${{ github.sha }}
+            ghcr.io/lappihuan/mittens-mitmproxy:alpine
+            ghcr.io/lappihuan/mittens-mitmproxy:alpine-${{ github.sha }}
 
   release:
     name: Release

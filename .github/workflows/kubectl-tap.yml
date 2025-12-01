@@ -1,0 +1,188 @@
+name: mittens
+on:
+  push:
+    # trigger on push to master
+    branches: [master]
+    # and on semver tag
+    tags:
+      - v*.*.*
+
+permissions:
+  contents: write    # for releases and tags
+  packages: write    # for GHCR push
+
+jobs:
+  build:
+    timeout-minutes: 30
+    name: Go build mittens
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25'
+
+    - name: Export GOROOT for tools
+      run: echo "GOROOT=$(go env GOROOT)" >> $GITHUB_ENV
+
+    - name: Clean stale Go caches (prevent tar conflicts)
+      run: |
+        go clean -cache -modcache || true
+        rm -rf ~/.cache/go-build || true
+        rm -rf ~/go/pkg/mod || true
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-1.25-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Add Go bin to PATH
+      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+    - name: Configure GOBIN and cache
+      run: |
+        echo "GOBIN=${{ github.workspace }}/.gobin" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/.gobin" >> $GITHUB_PATH
+
+    - name: Restore GOBIN cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/.gobin
+        key: ${{ runner.os }}-gobin-${{ hashFiles('scripts/deps.sh') }}
+
+    - name: Install system packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zsh kubectl
+
+    - name: Install developer tools
+      run: make deps
+      working-directory: ./
+
+    - name: Generate code
+      run: go generate ./...
+
+    - name: Install golangci-lint (official binary)
+      uses: golangci/golangci-lint-action@v9
+
+    - name: Use workspace-local Go cache and GOPATH
+      run: |
+        GOCACHE="${{ github.workspace }}/.cache/go-build"
+        rm -rf "$GOCACHE" || true
+        mkdir -p "$GOCACHE"
+        echo "GOCACHE=$GOCACHE" >> $GITHUB_ENV
+        GOPATH="${{ github.workspace }}/.gopath"
+        mkdir -p "$GOPATH"
+        echo "GOPATH=$GOPATH" >> $GITHUB_ENV
+        echo "Using GOCACHE=$GOCACHE and GOPATH=$GOPATH"
+
+    - name: Lint
+      run: golangci-lint run --timeout 5m
+
+    - name: Build
+      run: go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
+
+    #- name: Integration Test
+    #  run: ./scripts/ig-test.zsh
+
+  docker-build-scratch:
+    timeout-minutes: 10
+    name: ghcr.io/lappihuan/mittens-mitmproxy:latest
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push to GHCR
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        dockerfile: Dockerfile
+        push: true
+        tags: |
+          ghcr.io/lappihuan/mittens-mitmproxy:latest
+          ghcr.io/lappihuan/mittens-mitmproxy:${{ github.sha }}
+
+  docker-build-alpine:
+    timeout-minutes: 10
+    name: ghcr.io/lappihuan/mittens-mitmproxy:alpine
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push to GHCR
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        dockerfile: Dockerfile.alpine
+        push: true
+        tags: |
+          ghcr.io/lappihuan/mittens-mitmproxy:alpine
+          ghcr.io/lappihuan/mittens-mitmproxy:alpine-${{ github.sha }}
+  release:
+    timeout-minutes: 15
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build, docker-build-scratch, docker-build-alpine]
+    name: Release mittens
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25'
+
+    - name: Install zsh
+      run: sudo apt-get update; sudo apt-get install -y zsh
+
+    - name: Fetch for goreleaser
+      run: git fetch --prune
+
+    - name: Build
+      run: |
+        go install -v -trimpath -ldflags="-s -w" ./cmd/kubectl-tap
+
+    - name: Release
+      uses: goreleaser/goreleaser-action@v6.4.0
+      with:
+        version: v0.141.0
+        args: release --rm-dist
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update krew plugin
+      if: "!contains(github.ref, '-')" # skip RCs
+      uses: rajatjindal/krew-release-bot@v0.0.47
