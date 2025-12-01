@@ -21,7 +21,6 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -67,17 +66,23 @@ func main() {
 	}
 
 	versionCmd := NewVersionCmd()
-	onCmd := NewOnCmd(client, config)
-	offCmd := NewOffCmd(client)
-	listCmd := NewListCmd(client)
+	tapCmd := &cobra.Command{
+		Use:     "mittens <service>",
+		Short:   "Enable mittens for a Service",
+		Long:    "Proxy a Kubernetes Service with mitmproxy for interactive debugging",
+		Example: "kubectl mittens -n my-namespace -p443 --https my-sample-service",
+		PreRunE: bindTapFlags,
+		RunE:    NewTapCommand(client, config, viper.GetViper()),
+		Args:    cobra.ExactArgs(1),
+	}
 
-	onCmd.Flags().StringP("port", "p", "", "target Service port")
-	onCmd.Flags().StringP("image", "i", defaultImageHTTP, "image to run in proxy container")
-	onCmd.Flags().Bool("https", false, "enable if target listener uses HTTPS")
-	onCmd.Flags().String("command-args", "mitmproxy", "specify command arguments for the proxy sidecar container")
-	onCmd.Flags().String("protocol", "http", "specify a protocol. Supported protocols: [ http ]")
+	tapCmd.Flags().StringP("port", "p", "", "target Service port")
+	tapCmd.Flags().StringP("image", "i", defaultImageHTTP, "image to run in proxy container")
+	tapCmd.Flags().Bool("https", false, "enable if target listener uses HTTPS")
+	tapCmd.Flags().String("command-args", "mitmproxy", "specify command arguments for the proxy sidecar container")
+	tapCmd.Flags().String("protocol", "http", "specify a protocol. Supported protocols: [ http ]")
 
-	rootCmd.AddCommand(versionCmd, onCmd, offCmd, listCmd)
+	rootCmd.AddCommand(versionCmd, tapCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		exiter.Exit(1)
@@ -113,14 +118,11 @@ func NewRootCmd(e Exiter) *cobra.Command {
 		// domain at some point.
 		Use:   "kubectl mittens",
 		Short: "mittens",
-		Example: ` Create mittens for a new Service:
-   kubectl mittens on -n demo -p443 --https sample-service",
+		Example: ` Proxy a Service with mitmproxy:
+   kubectl mittens -n demo -p443 --https sample-service
 
- List active mittens in all namespaces:
-   kubectl mittens list
-
- Remove mittens with the off command:
-   kubectl mittens off -n demo sample-service`,
+ Show mittens version:
+   kubectl mittens version`,
 		Long: `mittens - proxy Services in Kubernetes with mitmproxy TUI.
 
  Mittens is a fork of kubetap by Soluble, redesigned around mitmproxy's interactive terminal UI.
@@ -138,35 +140,6 @@ func NewRootCmd(e Exiter) *cobra.Command {
 			e.Exit(64) // EX_USAGE
 		},
 		SilenceUsage: true,
-	}
-}
-
-func NewOnCmd(client kubernetes.Interface, config *rest.Config) *cobra.Command {
-	return &cobra.Command{
-		Use:     "on",
-		Short:   "Enable mittens for a Service",
-		Example: "kubectl mittens on -n my-namespace -p443 --https my-sample-service",
-		PreRunE: bindTapFlags,
-		RunE:    NewTapCommand(client, config, viper.GetViper()),
-		Args:    cobra.ExactArgs(1),
-	}
-}
-
-func NewOffCmd(client kubernetes.Interface) *cobra.Command {
-	return &cobra.Command{
-		Use:     "off",
-		Short:   "Disable mittens for a Service",
-		Example: "kubectl mittens off -n my-namespace my-sample-service",
-		RunE:    NewUntapCommand(client, viper.GetViper()),
-		Args:    cobra.ExactArgs(1),
-	}
-}
-
-func NewListCmd(client kubernetes.Interface) *cobra.Command {
-	return &cobra.Command{
-		Use:   "list",
-		Short: "List Services with mittens enabled",
-		RunE:  NewListCommand(client, viper.GetViper()),
 	}
 }
 

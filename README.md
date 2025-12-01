@@ -74,14 +74,14 @@ kubectl krew install mittens
 ### Enable mittens for a Service
 
 ```sh
-kubectl mittens on my-service -n my-namespace -p 8080
+kubectl mittens my-service -n my-namespace -p 8080
 ```
 
 This will:
 1. Deploy a mitmproxy sidecar to pods matching the service
 2. Redirect traffic through mitmproxy
 3. Open an interactive tmux session with mitmproxy TUI
-4. Automatically clean up when you exit
+4. Automatically clean up when you exit (Ctrl+C)
 
 ### Interact with mitmproxy
 
@@ -95,12 +95,12 @@ Once connected:
 - Ctrl+B then D: Detach from tmux (keep mitmproxy running)
 ```
 
-### Disable mittens
+### Auto-Cleanup
 
-Simply exit the mitmproxy session, and mittens automatically cleans up:
+Simply press Ctrl+C to exit, and mittens automatically cleans up:
 
 ```
-- Ctrl+C or 'q' in mitmproxy will exit and trigger cleanup
+- Ctrl+C will interrupt mittens and trigger cleanup
 - All sidecar containers are removed
 - Service routing is restored
 - ConfigMaps are deleted
@@ -108,10 +108,10 @@ Simply exit the mitmproxy session, and mittens automatically cleans up:
 
 ## Usage
 
-### Tap On - Enable mittens
+### Enable mittens
 
 ```sh
-kubectl mittens on SERVICE [OPTIONS]
+kubectl mittens SERVICE [OPTIONS]
 ```
 
 **Options:**
@@ -125,48 +125,21 @@ kubectl mittens on SERVICE [OPTIONS]
 
 ```sh
 # Tap HTTP service on port 8080
-kubectl mittens on my-api -n default -p 8080
+kubectl mittens my-api -n default -p 8080
 
 # Tap HTTPS service
-kubectl mittens on my-api -n default -p 443 --https
+kubectl mittens my-api -n default -p 443 --https
 
 # Use custom image
-kubectl mittens on my-api -p 8080 -i ghcr.io/custom/mitmproxy:latest
+kubectl mittens my-api -p 8080 -i ghcr.io/custom/mitmproxy:latest
 
 # Custom mitmproxy mode
-kubectl mittens on my-api -p 8080 --command-args "mitmweb"
+kubectl mittens my-api -p 8080 --command-args "mitmweb"
 ```
 
-### Tap Off - Disable mittens
+### Disable mittens
 
-```sh
-kubectl mittens off SERVICE [OPTIONS]
-```
-
-This is rarely needed as cleanup happens automatically, but useful for emergency cleanup:
-
-```sh
-kubectl mittens off my-service -n my-namespace
-```
-
-### List - Show Active Mittens
-
-```sh
-kubectl mittens list [OPTIONS]
-```
-
-**Options:**
-- `-n, --namespace STRING`: Filter by namespace (default: all namespaces)
-
-**Example:**
-
-```sh
-# List all services with mittens enabled
-kubectl mittens list
-
-# List in specific namespace
-kubectl mittens list -n production
-```
+Mittens automatically cleans up when interrupted. Simply press Ctrl+C to exit and trigger cleanup.
 
 ## K9s Integration
 
@@ -220,12 +193,12 @@ Issues:
 ### Mittens Approach (Now)
 
 ```
-kubectl mittens on --> Sidecar Deployed
-                   --> Direct kubectl exec
-                   --> Interactive mitmproxy TUI
-User Terminal <----> mitmproxy tmux session
-                   --> User exits
-                   --> Auto cleanup
+kubectl mittens <service> --> Sidecar Deployed
+                          --> Direct kubectl exec
+                          --> Interactive mitmproxy TUI
+User Terminal <-----------> mitmproxy tmux session
+                          --> User exits (Ctrl+C)
+                          --> Auto cleanup
 ```
 
 Benefits:

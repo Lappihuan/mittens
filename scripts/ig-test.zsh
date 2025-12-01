@@ -75,7 +75,9 @@ for chart in ${_mittens_helm_charts[@]}; do
   _mittens_service=${_mittens_helm_services[${_mittens_iter}]}
 
   helm install --kube-context kind-mittens ${_mittens_helm} ${chart}
-  kubectl mittens on ${_mittens_service} -p${_mittens_port} --context kind-mittens --image mittens-mitmproxy:latest
+  # Start mittens in background; it will auto-cleanup when interrupted
+  kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens --image mittens-mitmproxy:latest &
+  _mittens_mittens_pid=${!}
   sleep 20
 
   _mittens_ready_state=""
@@ -121,8 +123,9 @@ for chart in ${_mittens_helm_charts[@]}; do
   kill ${_mittens_pf_pid}
   unset _mittens_pf_pid
 
-  # cleanup test
-  kubectl mittens off ${_mittens_service} --context kind-mittens
+  # cleanup - kill mittens process which triggers auto-cleanup
+  kill ${_mittens_mittens_pid}
+  sleep 2
   helm delete --kube-context kind-mittens ${_mittens_helm}
 
   unset _mittens_helm _mittens_port _mittens_service

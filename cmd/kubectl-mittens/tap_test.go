@@ -143,43 +143,6 @@ func Test_NewUntapCommand(t *testing.T) {
 	}
 }
 
-func Test_NewListCommand(t *testing.T) {
-	tests := []struct {
-		Name        string
-		ClientFunc  func() *fake.Clientset
-		Namespace   string
-		Err         error
-		ExpectedOut string
-	}{
-		{"simple", fakeClientTappedSimple, "default", nil, "Tapped Services in the default namespace:\n\nsample-service\n"},
-		{"all_namespaces", fakeClientTappedSimple, "", nil, "default/sample-service\n"},
-		{"namespace_not_exist", fakeClientTappedSimple, "notexist", ErrNamespaceNotExist, ""},
-		{"untapped", fakeClientUntappedSimple, "default", nil, "No Services in the default namespace are tapped.\n"},
-		{"untapped_all_ns", fakeClientUntappedSimple, "", nil, "No Services are tapped.\n"},
-	}
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			require := require.New(t)
-			fakeClient := tc.ClientFunc()
-			testViper := viper.New()
-			testViper.Set("namespace", tc.Namespace)
-			b := bytes.NewBufferString("")
-			cmd := &cobra.Command{}
-			cmd.SetOutput(b)
-			err := NewListCommand(fakeClient, testViper)(cmd, []string{})
-			if tc.Err != nil {
-				require.NotNil(err)
-				require.True(errors.Is(err, tc.Err))
-			} else {
-				require.Nil(err)
-				out, err := ioutil.ReadAll(b)
-				require.Nil(err)
-				require.Contains(string(out), tc.ExpectedOut)
-			}
-		})
-	}
-}
-
 var (
 	simpleNamespace = v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

@@ -122,55 +122,6 @@ type ProxyOptions struct {
 	dplName string
 }
 
-// NewListCommand lists Services that are already tapped.
-func NewListCommand(client kubernetes.Interface, viper *viper.Viper) func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, _ []string) error {
-		namespace := viper.GetString("namespace")
-		exists, err := hasNamespace(client, namespace)
-		if err != nil {
-			// this is the one case where we allow an empty namespace string
-			if !errors.Is(err, os.ErrInvalid) {
-				return fmt.Errorf("error fetching namespaces: %w", err)
-			}
-			exists = true
-		}
-		if !exists {
-			return ErrNamespaceNotExist
-		}
-		services, err := client.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return err
-		}
-		tappedServices := make(map[string]string)
-		for _, svc := range services.Items {
-			if svc.Annotations[annotationOriginalTargetPort] != "" {
-				tappedServices[svc.Name] = svc.Namespace
-			}
-		}
-
-		if namespace != "" {
-			if len(tappedServices) == 0 {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No Services in the %s namespace are tapped.\n", namespace)
-				return nil
-			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Tapped Services in the %s namespace:\n\n", namespace)
-			for k := range tappedServices {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", k)
-			}
-			return nil
-		}
-		if len(tappedServices) == 0 {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No Services are tapped.")
-			return nil
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Tapped Namespace/Service:")
-		for k, v := range tappedServices {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s/%s\n", v, k)
-		}
-		return nil
-	}
-}
-
 // NewTapCommand identifies a target employment through service selectors and modifies that
 // deployment to add a proxy sidecar.
 func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Viper) func(*cobra.Command, []string) error { //nolint: gocyclo
