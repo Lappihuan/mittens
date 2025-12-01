@@ -337,7 +337,7 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 		defer spinner.Stop("Pod ready!")
 
 		var ready bool
-		for i := 0; i < interactiveTimeoutSeconds; i++ {
+		for range interactiveTimeoutSeconds {
 			if ready {
 				break
 			}

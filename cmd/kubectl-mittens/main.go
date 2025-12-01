@@ -48,10 +48,8 @@ func die(args ...any) {
 
 func main() {
 	exiter := &Exit{}
-	rootCmd := NewRootCmd(exiter)
 
 	kubernetesConfigFlags := genericclioptions.NewConfigFlags(false)
-	kubernetesConfigFlags.AddFlags(rootCmd.PersistentFlags())
 
 	config, err := kubernetesConfigFlags.ToRESTConfig()
 	if err != nil {
@@ -61,28 +59,58 @@ func main() {
 	if err != nil {
 		die(err)
 	}
+
+	rootCmd := &cobra.Command{
+		Use:   "kubectl mittens [SERVICE] [OPTIONS]",
+		Short: "mittens",
+		Long: `mittens - proxy Services in Kubernetes with mitmproxy TUI.
+
+Mittens is a fork of kubetap by Soluble, redesigned around mitmproxy's interactive terminal UI.
+
+More information is available at the project website:
+	https://github.com/Lappihuan/mittens
+
+Original project (kubetap):
+	https://github.com/soluble-ai/kubetap
+`,
+		Example: ` Proxy a Service with mitmproxy:
+   kubectl mittens -n demo -p443 --https sample-service
+
+ Show mittens version:
+   kubectl mittens version`,
+		SilenceUsage: true,
+	}
+
+	kubernetesConfigFlags.AddFlags(rootCmd.PersistentFlags())
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		die(err)
 	}
 
+	// Add version subcommand
 	versionCmd := NewVersionCmd()
-	tapCmd := &cobra.Command{
-		Use:     "mittens <service>",
-		Short:   "Enable mittens for a Service",
-		Long:    "Proxy a Kubernetes Service with mitmproxy for interactive debugging",
-		Example: "kubectl mittens -n my-namespace -p443 --https my-sample-service",
-		PreRunE: bindTapFlags,
-		RunE:    NewTapCommand(client, config, viper.GetViper()),
-		Args:    cobra.ExactArgs(1),
+	rootCmd.AddCommand(versionCmd)
+
+	// Add flags to root command for direct usage
+	rootCmd.Flags().StringP("port", "p", "", "target Service port (auto-detected if not provided)")
+	rootCmd.Flags().StringP("image", "i", defaultImageHTTP, "image to run in proxy container")
+	rootCmd.Flags().Bool("https", false, "enable if target listener uses HTTPS")
+	rootCmd.Flags().String("command-args", "mitmproxy", "specify command arguments for the proxy sidecar container")
+	rootCmd.Flags().String("protocol", "http", "specify a protocol. Supported protocols: [ http ]")
+
+	// Handle root command with service as positional arg (kubectl mittens <service>)
+	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			_ = cmd.Usage()
+			exiter.Exit(64) // EX_USAGE
+			return nil
+		}
+		// Bind flags and execute tap logic
+		if err := bindTapFlags(cmd, args); err != nil {
+			return err
+		}
+		return NewTapCommand(client, config, viper.GetViper())(cmd, args)
 	}
-
-	tapCmd.Flags().StringP("port", "p", "", "target Service port (auto-detected if not provided)")
-	tapCmd.Flags().StringP("image", "i", defaultImageHTTP, "image to run in proxy container")
-	tapCmd.Flags().Bool("https", false, "enable if target listener uses HTTPS")
-	tapCmd.Flags().String("command-args", "mitmproxy", "specify command arguments for the proxy sidecar container")
-	tapCmd.Flags().String("protocol", "http", "specify a protocol. Supported protocols: [ http ]")
-
-	rootCmd.AddCommand(versionCmd, tapCmd)
+	rootCmd.Args = cobra.ArbitraryArgs
 
 	if err := rootCmd.Execute(); err != nil {
 		exiter.Exit(1)
@@ -107,40 +135,6 @@ func bindTapFlags(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 	return nil
-}
-
-func NewRootCmd(e Exiter) *cobra.Command {
-	return &cobra.Command{
-		// HACK: there is a "bug" in cobra's handling of Use strings with spaces, so the space
-		// below in the Use field isn't a true space -- it's a unicode Em space.
-		// Also, if you can't see the space below prominently, you need to change your editor settings
-		// to reveal Unicode characters. Otherwise, you're likely to PR some malicious code with a unicode
-		// domain at some point.
-		Use:   "kubectl mittens",
-		Short: "mittens",
-		Example: ` Proxy a Service with mitmproxy:
-   kubectl mittens -n demo -p443 --https sample-service
-
- Show mittens version:
-   kubectl mittens version`,
-		Long: `mittens - proxy Services in Kubernetes with mitmproxy TUI.
-
- Mittens is a fork of kubetap by Soluble, redesigned around mitmproxy's interactive terminal UI.
- 
- More information is available at the project website:
-	 https://github.com/Lappihuan/mittens
-
- Original project (kubetap):
-   https://github.com/soluble-ai/kubetap
-`,
-		Run: func(cmd *cobra.Command, _ []string) {
-			// NOTE: explicitly print out usage here, but overriding it for subcommands by way
-			// of SilenceUsage: true
-			_ = cmd.Usage()
-			e.Exit(64) // EX_USAGE
-		},
-		SilenceUsage: true,
-	}
 }
 
 func NewVersionCmd() *cobra.Command {

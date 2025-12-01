@@ -22,7 +22,6 @@ import (
 // Spinner wraps pterm spinner for pod readiness waiting with nice terminal output.
 type Spinner struct {
 	spinner *pterm.SpinnerPrinter
-	ticker  *time.Ticker
 	done    chan bool
 }
 
@@ -38,7 +37,7 @@ func NewSpinner(message string) *Spinner {
 // Stop stops the spinner and displays a success message.
 func (s *Spinner) Stop(message string) {
 	if s.spinner != nil {
-		s.spinner.Stop()
+		_ = s.spinner.Stop()
 		pterm.Success.Println(message)
 	}
 }
@@ -46,7 +45,7 @@ func (s *Spinner) Stop(message string) {
 // Fail stops the spinner and displays a failure message.
 func (s *Spinner) Fail(message string) {
 	if s.spinner != nil {
-		s.spinner.Stop()
+		_ = s.spinner.Stop()
 		pterm.Error.Println(message)
 	}
 }
@@ -68,16 +67,13 @@ func StartProgressWithTimeout(message string, timeout time.Duration, onUpdate fu
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			elapsed := time.Since(start)
-			if elapsed > timeout {
-				return
-			}
-			if onUpdate != nil {
-				onUpdate(elapsed)
-			}
+	for range ticker.C {
+		elapsed := time.Since(start)
+		if elapsed > timeout {
+			return
+		}
+		if onUpdate != nil {
+			onUpdate(elapsed)
 		}
 	}
 }

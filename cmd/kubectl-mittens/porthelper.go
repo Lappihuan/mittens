@@ -49,8 +49,9 @@ func InteractivePortSelection(service *v1.Service) (int32, error) {
 		port int32
 	}
 
-	var options []portOption
-	var optionStrings []string
+	portCount := len(service.Spec.Ports)
+	options := make([]portOption, 0, portCount)
+	optionStrings := make([]string, 0, portCount)
 
 	for _, port := range service.Spec.Ports {
 		portName := port.Name
