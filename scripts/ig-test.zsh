@@ -115,9 +115,9 @@ for chart in ${_mittens_helm_charts[@]}; do
     return 1
   fi
   
-  # Kill mittens process if still running
-  kill $_mittens_pid 2>/dev/null
-  wait $_mittens_pid 2>/dev/null
+  # Kill mittens process if still running (ignore errors if already dead)
+  kill $_mittens_pid 2>/dev/null || true
+  wait $_mittens_pid 2>/dev/null || true
   
   echo "✓ Mittens proxy setup successful for ${_mittens_service}"
 done
