@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	k8sappsv1 "k8s.io/api/apps/v1"
@@ -135,9 +134,6 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 		https := viper.GetBool("https")
 
 		commandArgs := strings.Fields(viper.GetString("commandArgs"))
-		if targetSvcPort == 0 {
-			return errors.New("--port flag not provided")
-		}
 		if namespace == "" {
 			// TODO: There is probably a way to get the default namespace from the
 			// client context, but I'm not sure what that API is. Will dig
@@ -152,6 +148,32 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 		}
 		if !exists {
 			return ErrNamespaceNotExist
+		}
+
+		// Get the service first for port auto-detection
+		targetService, err := client.CoreV1().Services(namespace).Get(context.TODO(), targetSvcName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		// Auto-detect or prompt for port if not provided
+		if targetSvcPort == 0 {
+			var detectionErr error
+			targetSvcPort, detectionErr = DetectServicePort(targetService)
+			if detectionErr != nil {
+				return detectionErr
+			}
+
+			// If multiple ports, prompt user to select
+			if targetSvcPort == 0 {
+				selectedPort, err := InteractivePortSelection(targetService)
+				if err != nil {
+					return err
+				}
+				targetSvcPort = selectedPort
+			}
+
+			viper.Set("proxyPort", targetSvcPort)
 		}
 
 		proxyOpts := ProxyOptions{
@@ -177,12 +199,6 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 
 		deploymentsClient := client.AppsV1().Deployments(namespace)
 		servicesClient := client.CoreV1().Services(namespace)
-
-		// get the service to ensure it exists before we go around monkeying with deployments
-		targetService, err := client.CoreV1().Services(namespace).Get(context.TODO(), targetSvcName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
 
 		// ensure that we haven't tapped this service already
 		anns := targetService.GetAnnotations()
@@ -315,22 +331,14 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 			time.Sleep(5 * time.Second)
 			s <- struct{}{}
 		}()
-		bar := progressbar.NewOptions(interactiveTimeoutSeconds,
-			progressbar.OptionThrottle(100*time.Millisecond),
-			progressbar.OptionClearOnFinish(),
-			progressbar.OptionSetPredictTime(false),
-			progressbar.OptionSetWriter(cmd.OutOrStderr()),
-			progressbar.OptionSetWidth(30),
-			progressbar.OptionSetDescription("Waiting for Pod containers to become ready..."),
-			progressbar.OptionOnCompletion(func() {
-				_, _ = fmt.Fprintf(cmd.OutOrStderr(), "\n")
-			}),
-		)
+
+		// Use spinner instead of progress bar
+		spinner := NewSpinner("Waiting for Pod containers to become ready...")
+		defer spinner.Stop("Pod ready!")
+
 		var ready bool
-		for range interactiveTimeoutSeconds {
-			_ = bar.Add(1)
+		for i := 0; i < interactiveTimeoutSeconds; i++ {
 			if ready {
-				_ = bar.Finish()
 				break
 			}
 			// Check if context was cancelled (e.g., in tests)
@@ -371,8 +379,8 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 			}
 		}
 		if !ready {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), ".\n\n")
-			die("Pod not running after 90 seconds. Cancelling port-forward, tap still active.")
+			spinner.Fail("Pod not running after 90 seconds. Cancelling port-forward, tap still active.")
+			die()
 		}
 		dp, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
 		if err != nil {

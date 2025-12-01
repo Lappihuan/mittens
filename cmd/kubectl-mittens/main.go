@@ -76,7 +76,7 @@ func main() {
 		Args:    cobra.ExactArgs(1),
 	}
 
-	tapCmd.Flags().StringP("port", "p", "", "target Service port")
+	tapCmd.Flags().StringP("port", "p", "", "target Service port (auto-detected if not provided)")
 	tapCmd.Flags().StringP("image", "i", defaultImageHTTP, "image to run in proxy container")
 	tapCmd.Flags().Bool("https", false, "enable if target listener uses HTTPS")
 	tapCmd.Flags().String("command-args", "mitmproxy", "specify command arguments for the proxy sidecar container")

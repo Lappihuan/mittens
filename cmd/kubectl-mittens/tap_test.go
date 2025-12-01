@@ -460,3 +460,60 @@ func fakeClientUntappedNoPortName() *fake.Clientset {
 		&service,
 	)
 }
+
+// Test_AutoPortDetection tests that the tap command auto-detects ports when not provided
+func Test_AutoPortDetection(t *testing.T) {
+	tests := []struct {
+		name        string
+		clientFunc  func() *fake.Clientset
+		namespace   string
+		port        int32 // 0 means not set, should auto-detect
+		shouldPass  bool
+		description string
+	}{
+		{
+			name:        "auto_detect_single_port",
+			clientFunc:  fakeClientUntappedSimple,
+			namespace:   "default",
+			port:        0, // Not provided
+			shouldPass:  true,
+			description: "Should auto-detect single port and succeed",
+		},
+		{
+			name:        "explicit_port_works",
+			clientFunc:  fakeClientUntappedSimple,
+			namespace:   "default",
+			port:        80, // Explicitly provided
+			shouldPass:  true,
+			description: "Should work with explicit port",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			require := require.New(t)
+			fakeClient := tc.clientFunc()
+			testViper := viper.New()
+			testViper.Set("namespace", tc.namespace)
+
+			// Only set port if not zero (simulating not providing the flag)
+			if tc.port != 0 {
+				testViper.Set("proxyPort", tc.port)
+			}
+
+			cmd := &cobra.Command{}
+			cmd.SetOutput(ioutil.Discard)
+
+			err := NewTapCommand(fakeClient, &rest.Config{}, testViper)(cmd, []string{"sample-service"})
+
+			if tc.shouldPass {
+				require.Nil(err, tc.description)
+				// Verify that the port was set (auto-detected or used provided)
+				detectedPort := testViper.GetInt32("proxyPort")
+				require.NotZero(detectedPort, "Port should be set after tap command")
+			} else {
+				require.NotNil(err, tc.description)
+			}
+		})
+	}
+}

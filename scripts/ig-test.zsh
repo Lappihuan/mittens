@@ -53,12 +53,6 @@ unset _mittens_kind_clusters
 trap '{ e=${?}; sleep 1; kind delete cluster --name mittens ; exit ${e} }' SIGINT SIGTERM EXIT
 kind create cluster --name mittens
 
-#
-# Build and load the mitmproxy sidecar image into the kind cluster
-#
-echo "Building and loading mitmproxy sidecar image..."
-docker build -t mittens-mitmproxy:latest -f ./proxies/mitmproxy/Dockerfile ./proxies/mitmproxy/
-kind load docker-image mittens-mitmproxy:latest --name mittens
 
 #
 # Test mittens using helm ${chart}

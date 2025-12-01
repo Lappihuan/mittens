@@ -74,14 +74,19 @@ kubectl krew install mittens
 ### Enable mittens for a Service
 
 ```sh
+# With explicit port
 kubectl mittens my-service -n my-namespace -p 8080
+
+# Without port (auto-detected or prompted)
+kubectl mittens my-service -n my-namespace
 ```
 
 This will:
-1. Deploy a mitmproxy sidecar to pods matching the service
-2. Redirect traffic through mitmproxy
-3. Open an interactive tmux session with mitmproxy TUI
-4. Automatically clean up when you exit (Ctrl+C)
+1. Auto-detect or prompt for the service port (if not provided)
+2. Deploy a mitmproxy sidecar to pods matching the service
+3. Redirect traffic through mitmproxy
+4. Open an interactive tmux session with mitmproxy TUI
+5. Automatically clean up when you exit (Ctrl+C)
 
 ### Interact with mitmproxy
 
@@ -116,7 +121,7 @@ kubectl mittens SERVICE [OPTIONS]
 
 **Options:**
 - `-n, --namespace STRING`: Target namespace (default: current context)
-- `-p, --port INT`: Target service port
+- `-p, --port INT`: Target service port (optional - auto-detected or prompts if multiple ports)
 - `--https`: Enable for HTTPS services
 - `-i, --image STRING`: Custom proxy image
 - `--command-args STRING`: Custom mitmproxy arguments
