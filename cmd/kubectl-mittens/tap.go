@@ -334,7 +334,6 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 
 		// Use spinner instead of progress bar
 		spinner := NewSpinner("Waiting for Pod containers to become ready...")
-		defer spinner.Stop("Pod ready!")
 
 		var ready bool
 		for range interactiveTimeoutSeconds {
@@ -347,6 +346,7 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 				case <-cmd.Context().Done():
 					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "")
 					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Context cancelled. Stopping mittens...")
+					spinner.Fail("Cancelled")
 					_ = NewUntapCommand(client, viper)(cmd, args)
 					return cmd.Context().Err()
 				default:
@@ -360,10 +360,12 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 			case <-s:
 				dp, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
 				if err != nil {
+					spinner.Fail("Error getting deployment")
 					return err
 				}
 				pod, err := mittensPod(podsClient, dp.Name)
 				if err != nil {
+					spinner.Fail("Error getting pod")
 					return err
 				}
 				for _, cond := range pod.Status.Conditions {
@@ -379,9 +381,10 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 			}
 		}
 		if !ready {
-			spinner.Fail("Pod not running after 90 seconds. Cancelling port-forward, tap still active.")
+			spinner.Fail("Pod not running after 90 seconds. Cancelling.")
 			die()
 		}
+		spinner.Stop("Pod ready!")
 		dp, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
 		if err != nil {
 			return err
