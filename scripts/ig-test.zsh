@@ -84,16 +84,18 @@ for chart in ${_mittens_helm_charts[@]}; do
 
   helm install --kube-context kind-mittens ${_mittens_helm} ${chart}
   
-  # Start mittens with timeout to prevent it from hanging on the TUI
-  # We'll capture the output to check for success
-  _mittens_output=$(timeout 45 kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens 2>&1)
+  # We need to run mittens in a non-interactive way for CI environments
+  # Use timeout and pipe input to avoid waiting for interactive prompt
+  # This will cause mittens to fail after pod is ready (expected in CI)
+  _mittens_output=$(timeout 45 bash -c "echo '' | kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens" 2>&1)
   _mittens_exit_code=$?
   
   # Check if mittens successfully set up the proxy (pod should be ready)
+  # We expect exit code 1 in CI since kubectl exec -it will fail without a real terminal
   if [[ ${_mittens_output} == *"Pod ready!"* ]]; then
-    echo "✓ Mittens proxy setup successful"
+    echo "✓ Mittens proxy setup successful for ${_mittens_service}"
   else
-    echo "✗ Mittens failed to set up proxy"
+    echo "✗ Mittens failed to set up proxy for ${_mittens_service}"
     echo "Output: ${_mittens_output}"
     return 1
   fi
