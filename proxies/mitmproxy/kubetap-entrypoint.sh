@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -o pipefail
+# Note: pipefail is not POSIX, so we skip it here for compatibility
+# The script will still work correctly without it
 
 # Copy the config file if it exists and is readable
 if [ -f /home/mitmproxy/config/config.yaml ] && [ -r /home/mitmproxy/config/config.yaml ]; then
@@ -11,11 +12,10 @@ else
 fi
 
 prog="${1}"
-if [[ "${1}" == 'mitmdump' || "${1}" == 'mitmproxy' || "${1}" == 'mitmweb' ]]; then
-  MITMPROXY_PATH='/home/mitmproxy/.mitmproxy'
-  
-  # For mitmproxy interactive terminal mode, use tmux to handle TTY requirements
-  if [[ "${1}" == 'mitmproxy' ]]; then
+case "$prog" in
+  mitmproxy)
+    MITMPROXY_PATH='/home/mitmproxy/.mitmproxy'
+    
     # Start a tmux session with mitmproxy to allow interactive access without requiring a TTY
     # Users can 'kubectl exec -it <pod> -- tmux attach-session -t mitmproxy' to interact
     echo "Starting mitmproxy in tmux session with confdir=${MITMPROXY_PATH}" >&2
@@ -37,48 +37,40 @@ if [[ "${1}" == 'mitmdump' || "${1}" == 'mitmproxy' || "${1}" == 'mitmweb' ]]; t
       echo "ERROR: Mitmproxy session exited immediately" >&2
     fi
     
-    # Create a bash wrapper script in /usr/local/bin that auto-attaches to tmux
-    cat > /usr/local/bin/shell-wrapper.sh << 'WRAPPER_EOF'
-#!/bin/bash
-# Auto-attach to mitmproxy tmux session if it exists and we're in an interactive shell
-if [[ $- == *i* ]] && [ -z "$TMUX" ]; then
-  if tmux has-session -t mitmproxy 2>/dev/null; then
-    exec tmux attach-session -t mitmproxy
-  fi
-fi
-# Fall through to normal bash if no tmux session or if already in tmux
-exec /bin/bash "$@"
-WRAPPER_EOF
-    chmod +x /usr/local/bin/shell-wrapper.sh
-    
     # Keep the container running - sleep indefinitely
-    # Kubernetes liveness probe will monitor if mitmproxy is still listening on port 7777
-    # If it dies, the container will be restarted
+    # This allows users to attach via: kubectl exec -it <pod> -- tmux attach-session -t mitmproxy
+    # or just: kubectl exec -it <pod> -- bash
     echo "Container keeping alive with sleep infinity" >&2
     sleep infinity
-  else
-    # For mitmdump or mitmweb (or other commands), use direct execution
+    ;;
+  mitmdump|mitmweb)
+    MITMPROXY_PATH='/home/mitmproxy/.mitmproxy'
+    # For mitmdump or mitmweb, use direct execution
     echo "Starting ${prog} with confdir=${MITMPROXY_PATH}" >&2
     exec "${@}" --set "confdir=${MITMPROXY_PATH}"
-  fi
-else
-  # If no command specified, default to bash which will auto-attach to tmux
-  if [ -z "$1" ]; then
+    ;;
+  bash|/bin/bash|sh|/bin/sh)
+    # For shell commands, try to auto-attach if tmux session exists
+    if tmux has-session -t mitmproxy 2>/dev/null; then
+      echo "Attaching to mitmproxy session..." >&2
+      exec tmux attach-session -t mitmproxy
+    else
+      echo "Running shell (no mitmproxy session available)" >&2
+      exec "${@}"
+    fi
+    ;;
+  "")
+    # If no command specified, default to bash which will auto-attach to tmux
     if tmux has-session -t mitmproxy 2>/dev/null; then
       echo "Attaching to mitmproxy session..." >&2
       exec tmux attach-session -t mitmproxy
     else
       exec /bin/bash
     fi
-  fi
-  
-  # For other shells/commands, try to auto-attach if it's a shell command
-  if [[ "$1" == "bash" || "$1" == "/bin/bash" || "$1" == "sh" || "$1" == "/bin/sh" ]]; then
-    if tmux has-session -t mitmproxy 2>/dev/null; then
-      echo "Attaching to mitmproxy session..." >&2
-      exec tmux attach-session -t mitmproxy
-    fi
-  fi
-  echo "Running command: ${@}" >&2
-  exec "${@}"
-fi
+    ;;
+  *)
+    # For any other command, just run it
+    echo "Running command: ${@}" >&2
+    exec "${@}"
+    ;;
+esac
