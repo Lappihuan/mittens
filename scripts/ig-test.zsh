@@ -83,8 +83,10 @@ for chart in ${_mittens_helm_charts[@]}; do
   _mittens_service=${_mittens_helm_services[${_mittens_iter}]}
 
   helm install --kube-context kind-mittens ${_mittens_helm} ${chart}
-  # Start mittens in background; it will auto-cleanup when interrupted
-  kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens &
+  
+  # Start mittens in background
+  # Send 'q' after a short delay to exit the mitmproxy TUI, but the sidecar stays running
+  (sleep 2 && echo "q") | kubectl mittens ${_mittens_service} -p${_mittens_port} --context kind-mittens &
   _mittens_mittens_pid=${!}
   sleep 20
 
