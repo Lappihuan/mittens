@@ -52,7 +52,7 @@ func Test_NewTapCommand(t *testing.T) {
 		{"named_ports_no_match", fakeClientUntappedNamedPortsMissing, 80, "default", ErrDeploymentMissingPorts},
 		{"incorrect_namespace", fakeClientUntappedSimple, 80, "notexist", ErrNamespaceNotExist},
 		{"incorrect_port", fakeClientUntappedSimple, 9999, "default", ErrServiceMissingPort},
-		{"tapped_simple", fakeClientTappedSimple, 80, "default", ErrServiceTapped},
+
 		{"missing_deployment", fakeClientUntappedWithoutDeployment, 80, "default", ErrServiceSelectorNoMatch},
 		{"no_namespace_in_cluster", fakeClientUntappedWithoutNamespace, 80, "default", ErrNamespaceNotExist},
 		{"deployment_without_labels", fakeClientUntappedNoLabels, 80, "default", ErrServiceSelectorNoMatch},

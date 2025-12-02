@@ -64,7 +64,6 @@ const (
 var (
 	ErrNamespaceNotExist          = errors.New("the provided Namespace does not exist")
 	ErrServiceMissingPort         = errors.New("the target Service does not have the provided port")
-	ErrServiceTapped              = errors.New("the target Service already has mittens enabled")
 	ErrServiceSelectorNoMatch     = errors.New("the Service selector did not match any Deployments")
 	ErrServiceSelectorMultiMatch  = errors.New("the Service selector matched multiple Deployments")
 	ErrDeploymentOutsideNamespace = errors.New("the Service selector matched Deployment outside the specified Namespace")
@@ -203,109 +202,114 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 
 		deploymentsClient := client.AppsV1().Deployments(namespace)
 		servicesClient := client.CoreV1().Services(namespace)
+		podsClient := client.CoreV1().Pods(namespace)
 
-		// ensure that we haven't tapped this service already
+		// Check if this service is already tapped
 		anns := targetService.GetAnnotations()
-		if anns[annotationOriginalTargetPort] != "" {
-			return ErrServiceTapped
-		}
+		alreadyTapped := anns[annotationOriginalTargetPort] != ""
 
-		// set the upstream port so the proxy knows where to forward traffic
-		for _, ports := range targetService.Spec.Ports {
-			if ports.Port != targetSvcPort {
-				continue
-			}
-			if ports.TargetPort.Type == intstr.Int {
-				proxyOpts.UpstreamPort = ports.TargetPort.String()
-			}
-			// if named, must determine port from deployment spec
-			if ports.TargetPort.Type == intstr.String {
-				var err error
-				targetDpl, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
-				if err != nil {
-					return fmt.Errorf("error resolving Deployment from Service selectors while setting proxy ports: %w", err)
+		if !alreadyTapped {
+			// set the upstream port so the proxy knows where to forward traffic
+			for _, ports := range targetService.Spec.Ports {
+				if ports.Port != targetSvcPort {
+					continue
 				}
-				for _, c := range targetDpl.Spec.Template.Spec.Containers {
-					for _, p := range c.Ports {
-						if p.Name == ports.TargetPort.String() {
-							// Set the upstream (target) Service port
-							proxyOpts.UpstreamPort = strconv.Itoa(int(p.ContainerPort))
+				if ports.TargetPort.Type == intstr.Int {
+					proxyOpts.UpstreamPort = ports.TargetPort.String()
+				}
+				// if named, must determine port from deployment spec
+				if ports.TargetPort.Type == intstr.String {
+					var err error
+					targetDpl, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
+					if err != nil {
+						return fmt.Errorf("error resolving Deployment from Service selectors while setting proxy ports: %w", err)
+					}
+					for _, c := range targetDpl.Spec.Template.Spec.Containers {
+						for _, p := range c.Ports {
+							if p.Name == ports.TargetPort.String() {
+								// Set the upstream (target) Service port
+								proxyOpts.UpstreamPort = strconv.Itoa(int(p.ContainerPort))
+							}
 						}
 					}
-				}
-				if proxyOpts.UpstreamPort == "" {
-					return ErrDeploymentMissingPorts
+					if proxyOpts.UpstreamPort == "" {
+						return ErrDeploymentMissingPorts
+					}
 				}
 			}
-		}
 
-		targetDpl, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
-		if err != nil {
-			return fmt.Errorf("error resolving Deployment from Service selectors: %w", err)
-		}
-		proxyOpts.dplName = targetDpl.Name
-		// Save the target Deployment name to anchor the ConfigMap
-		// to the Deployment.
-
-		// Get a proxy based on the protocol type
-		var proxy Tap
-		switch Protocol(protocol) { //nolint: exhaustive
-		case protocolTCP, protocolUDP:
-		case protocolGRPC:
-		default:
-			// AKA, case protocolHTTP:
-			proxy = NewMitmproxy(client, proxyOpts)
-		}
-
-		// Prepare the environment (configmaps, secrets, volumes, etc).
-		// Nothing in ReadyEnv should modify manifests that result in
-		// code running in the cluster. No Pods, no Contaniers, no ReplicaSets,
-		// etc.
-		if err := proxy.ReadyEnv(); err != nil {
-			return err
-		}
-
-		// Setup the sidcar
-		dpl, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
-		if err != nil {
-			return err
-		}
-		// set the Deployment name so the configmap tracks a specific Deployment
-
-		sidecar := proxy.Sidecar(dpl.Name)
-		sidecar.Image = image
-		sidecar.Args = commandArgs
-
-		// Apply the Deployment configuration
-		retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			dpl.Spec.Template.Spec.Containers = append(dpl.Spec.Template.Spec.Containers, sidecar)
-			proxy.PatchDeployment(&dpl)
-			// set annotation on pod to know what pods are tapped
-			anns := dpl.Spec.Template.GetAnnotations()
-			if anns == nil {
-				anns = map[string]string{}
+			targetDpl, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
+			if err != nil {
+				return fmt.Errorf("error resolving Deployment from Service selectors: %w", err)
 			}
-			anns[annotationIsTapped] = dpl.Name
-			dpl.Spec.Template.SetAnnotations(anns)
-			_, updateErr := deploymentsClient.Update(context.TODO(), &dpl, metav1.UpdateOptions{})
-			return updateErr
-		})
-		if retryErr != nil {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Error modifying Deployment, reverting tap...")
-			_ = NewUntapCommand(client, viper)(cmd, args)
-			return fmt.Errorf("failed to add sidecars to Deployment: %w", retryErr)
-		}
+			proxyOpts.dplName = targetDpl.Name
+			// Save the target Deployment name to anchor the ConfigMap
+			// to the Deployment.
 
-		// Tap the Service to redirect the incoming traffic to our proxy, which is configured to redirect
-		// to the original port.
-		if err := tapSvc(servicesClient, targetSvcName, targetSvcPort); err != nil {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Error modifying Service, reverting tap...")
-			_ = NewUntapCommand(client, viper)(cmd, args)
-			return err
-		}
+			// Get a proxy based on the protocol type
+			var proxy Tap
+			switch Protocol(protocol) { //nolint: exhaustive
+			case protocolTCP, protocolUDP:
+			case protocolGRPC:
+			default:
+				// AKA, case protocolHTTP:
+				proxy = NewMitmproxy(client, proxyOpts)
+			}
+
+			// Prepare the environment (configmaps, secrets, volumes, etc).
+			// Nothing in ReadyEnv should modify manifests that result in
+			// code running in the cluster. No Pods, no Contaniers, no ReplicaSets,
+			// etc.
+			if err := proxy.ReadyEnv(); err != nil {
+				return err
+			}
+
+			// Setup the sidcar
+			dpl, err := deploymentFromSelectors(deploymentsClient, targetService.Spec.Selector)
+			if err != nil {
+				return err
+			}
+			// set the Deployment name so the configmap tracks a specific Deployment
+
+			sidecar := proxy.Sidecar(dpl.Name)
+			sidecar.Image = image
+			sidecar.Args = commandArgs
+
+			// Apply the Deployment configuration
+			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				dpl.Spec.Template.Spec.Containers = append(dpl.Spec.Template.Spec.Containers, sidecar)
+				proxy.PatchDeployment(&dpl)
+				// set annotation on pod to know what pods are tapped
+				anns := dpl.Spec.Template.GetAnnotations()
+				if anns == nil {
+					anns = map[string]string{}
+				}
+				anns[annotationIsTapped] = dpl.Name
+				dpl.Spec.Template.SetAnnotations(anns)
+				_, updateErr := deploymentsClient.Update(context.TODO(), &dpl, metav1.UpdateOptions{})
+				return updateErr
+			})
+			if retryErr != nil {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Error modifying Deployment, reverting tap...")
+				_ = NewUntapCommand(client, viper)(cmd, args)
+				return fmt.Errorf("failed to add sidecars to Deployment: %w", retryErr)
+			}
+
+			// Tap the Service to redirect the incoming traffic to our proxy, which is configured to redirect
+			// to the original port.
+			if err := tapSvc(servicesClient, targetSvcName, targetSvcPort); err != nil {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Error modifying Service, reverting tap...")
+				_ = NewUntapCommand(client, viper)(cmd, args)
+				return err
+			}
+		} // End of if !alreadyTapped
 
 		_, _ = fmt.Fprintln(cmd.OutOrStdout())
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Port %d of Service %q has been tapped!\n", targetSvcPort, targetSvcName)
+		if !alreadyTapped {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Port %d of Service %q has been tapped!\n", targetSvcPort, targetSvcName)
+		} else {
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Service already tapped. Attaching to existing mitmproxy session...")
+		}
 
 		// Only wait for pod and exec when explicitly requested by running from a terminal
 		// Check if stdout is going to a terminal (not pipes/redirects)
@@ -326,7 +330,6 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 			die()
 		}()
 
-		podsClient := client.CoreV1().Pods(namespace)
 		s := make(chan struct{})
 		defer close(s)
 		go func() {
@@ -569,9 +572,6 @@ func tapSvc(svcClient corev1.ServiceInterface, svcName string, targetPort int32)
 			anns = make(map[string]string)
 		}
 
-		if anns[annotationOriginalTargetPort] != "" {
-			return ErrServiceTapped
-		}
 		var targetSvcPort v1.ServicePort
 		var hasPort bool
 		for _, sp := range svc.Spec.Ports {
