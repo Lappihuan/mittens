@@ -637,8 +637,8 @@ func untapSvc(svcClient corev1.ServiceInterface, svcName string) error {
 		anns := svc.GetAnnotations()
 		newAnns := make(map[string]string)
 		for k, v := range anns {
-			// Remove mittens annotation but preserve Flux drift detection annotation
-			if k != annotationOriginalTargetPort {
+			// Remove mittens and Flux annotations added during tap
+			if k != annotationOriginalTargetPort && k != fluxDriftDetectionAnnotation {
 				newAnns[k] = v
 			}
 		}
