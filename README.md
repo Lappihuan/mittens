@@ -62,11 +62,7 @@ plugins:
 
 ## License
 
-Apache 2.0. See [LICENSE](LICENSE) and [ATTRIBUTION.md](ATTRIBUTION.md).
-
-## Attribution
-
-Mittens is a fork of [kubetap](https://github.com/soluble-ai/kubetap) by Soluble Inc, originally licensed under Apache 2.0. Mittens maintains full Apache 2.0 compliance and acknowledges the original project. See [ATTRIBUTION.md](ATTRIBUTION.md) for full attribution details.
+Apache 2.0. See [LICENSE](LICENSE).
 
 [shield-build-status]: https://github.com/Lappihuan/mittens/workflows/build/badge.svg?branch=master
 [shield-latest-release]: https://img.shields.io/github/v/release/Lappihuan/mittens?include_prereleases&label=release&sort=semver
