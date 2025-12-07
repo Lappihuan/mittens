@@ -2,7 +2,7 @@ name: mitmproxy-image
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # Every 6 hours
+    - cron: "0 18 * * 0"  # Every Sunday
   push:
     branches: [master]
     paths:
