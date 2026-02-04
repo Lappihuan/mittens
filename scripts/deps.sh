@@ -9,7 +9,7 @@ GOTESTSUM_VERSION=v1.13.0
 # renovate: datasource=github-tags depName=kubernetes-sigs/kind
 KIND_VERSION=v0.31.0
 # renovate: datasource=github-tags depName=helm/helm
-HELM_VERSION=v4.0.5
+HELM_VERSION=v4.1.0
 # renovate: datasource=github-tags depName=mvdan/sh
 GOFUMPT_VERSION=v3.12.0
 
