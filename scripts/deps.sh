@@ -3,13 +3,13 @@ set -eu
 
 # Developer tool versions (tracked by Renovate)
 # renovate: datasource=github-tags depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION=v2.8.0
+GOLANGCI_LINT_VERSION=v2.9.0
 # renovate: datasource=github-tags depName=gotestyourself/gotestsum
 GOTESTSUM_VERSION=v1.13.0
 # renovate: datasource=github-tags depName=kubernetes-sigs/kind
 KIND_VERSION=v0.31.0
 # renovate: datasource=github-tags depName=helm/helm
-HELM_VERSION=v4.1.0
+HELM_VERSION=v4.1.1
 # renovate: datasource=github-tags depName=mvdan/sh
 GOFUMPT_VERSION=v3.12.0
 
