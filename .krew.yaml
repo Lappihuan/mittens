@@ -4,7 +4,7 @@ metadata:
   name: mittens
 spec:
   version: {{ .TagName }}
-  homepage: https://lappihuan.github.io/mittens/
+  homepage: https://github.com/Lappihuan/mittens
   shortDescription: "Interactively proxy Kubernetes Services with mitmproxy TUI"
   description: |
     Interactively proxy Kubernetes Services by deploying
