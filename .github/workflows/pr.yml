@@ -14,7 +14,7 @@ jobs:
       
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version: "1.26"
       
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
@@ -35,7 +35,7 @@ jobs:
       
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version: "1.26"
       
       - name: Build
         run: go build -o /tmp/mittens ./cmd/kubectl-mittens
