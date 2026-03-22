@@ -119,4 +119,4 @@ jobs:
       
       - name: Update krew plugin
         if: "!contains(github.ref, '-')"
-        uses: rajatjindal/krew-release-bot@v0.0.47
+        uses: rajatjindal/krew-release-bot@v0.0.51
