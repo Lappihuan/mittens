@@ -3,15 +3,15 @@ set -eu
 
 # Developer tool versions (tracked by Renovate)
 # renovate: datasource=github-tags depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION=v2.11.4
+GOLANGCI_LINT_VERSION=v2.13.2
 # renovate: datasource=github-tags depName=gotestyourself/gotestsum
 GOTESTSUM_VERSION=v1.13.0
 # renovate: datasource=github-tags depName=kubernetes-sigs/kind
-KIND_VERSION=v0.31.0
+KIND_VERSION=v0.33.0
 # renovate: datasource=github-tags depName=helm/helm
-HELM_VERSION=v4.1.3
+HELM_VERSION=v4.2.4
 # renovate: datasource=github-tags depName=mvdan/sh
-GOFUMPT_VERSION=v3.13.0
+GOFUMPT_VERSION=v3.14.1
 
 # canonical GOBIN fallback
 GOBIN_DIR=${GOBIN:-"$(go env GOPATH 2>/dev/null || echo $HOME/go)/bin"}
