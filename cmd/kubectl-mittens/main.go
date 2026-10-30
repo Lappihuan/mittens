@@ -108,6 +108,11 @@ Original project (kubetap):
 		if err := bindTapFlags(cmd, args); err != nil {
 			return err
 		}
+		namespace, _, err := kubernetesConfigFlags.ToRawKubeConfigLoader().Namespace()
+		if err != nil {
+			return err
+		}
+		viper.Set("namespace", namespace)
 		return NewTapCommand(client, config, viper.GetViper())(cmd, args)
 	}
 	rootCmd.Args = cobra.ArbitraryArgs

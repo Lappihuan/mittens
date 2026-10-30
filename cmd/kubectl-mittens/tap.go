@@ -138,10 +138,6 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 
 		commandArgs := strings.Fields(viper.GetString("commandArgs"))
 		if namespace == "" {
-			// TODO: There is probably a way to get the default namespace from the
-			// client context, but I'm not sure what that API is. Will dig
-			// for that at some point.
-			// BUG: "default" is not always the "correct default".
 			viper.Set("namespace", "default")
 			namespace = "default"
 		}
