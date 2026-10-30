@@ -51,15 +51,6 @@ func main() {
 
 	kubernetesConfigFlags := genericclioptions.NewConfigFlags(false)
 
-	config, err := kubernetesConfigFlags.ToRESTConfig()
-	if err != nil {
-		die(err)
-	}
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		die(err)
-	}
-
 	rootCmd := &cobra.Command{
 		Use:   "kubectl mittens [SERVICE] [OPTIONS]",
 		Short: "mittens",
@@ -106,6 +97,14 @@ Original project (kubetap):
 		}
 		// Bind flags and execute tap logic
 		if err := bindTapFlags(cmd, args); err != nil {
+			return err
+		}
+		config, err := kubernetesConfigFlags.ToRESTConfig()
+		if err != nil {
+			return err
+		}
+		client, err := kubernetes.NewForConfig(config)
+		if err != nil {
 			return err
 		}
 		return NewTapCommand(client, config, viper.GetViper())(cmd, args)

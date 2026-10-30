@@ -312,7 +312,7 @@ func NewTapCommand(client kubernetes.Interface, _ *rest.Config, viper *viper.Vip
 		}
 
 		// Spawn kubectl exec to attach to mitmproxy tmux session
-		execCmd := exec.CommandContext(cmd.Context(), "kubectl", "exec", "-it", pod.Name, "-n", namespace, "-c", "mittens", "--", "tmux", "attach-session", "-t", "mitmproxy")
+		execCmd := exec.CommandContext(cmd.Context(), "kubectl", attachArgs(pod.Name, namespace, viper)...)
 		execCmd.Stdin = os.Stdin
 		execCmd.Stdout = os.Stdout
 		execCmd.Stderr = os.Stderr
@@ -537,6 +537,17 @@ func deploymentFromSelectors(deploymentsClient appsv1.DeploymentInterface, selec
 	default:
 		return k8sappsv1.Deployment{}, ErrServiceSelectorMultiMatch
 	}
+}
+
+// attachArgs returns the kubectl arguments to attach to the mitmproxy session of a mittens pod.
+func attachArgs(podName, namespace string, v *viper.Viper) []string {
+	args := []string{"exec", "-it", podName, "-n", namespace, "-c", "mittens"}
+	for _, flag := range []string{"kubeconfig", "context", "cluster", "user"} {
+		if value := v.GetString(flag); value != "" {
+			args = append(args, "--"+flag, value)
+		}
+	}
+	return append(args, "--", "tmux", "attach-session", "-t", "mitmproxy")
 }
 
 // mittensPod returns a mittens pod matching a given Deployment name and Namespace.

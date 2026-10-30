@@ -28,6 +28,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 )
@@ -139,6 +140,32 @@ func Test_NewUntapCommand(t *testing.T) {
 				require.Nil(err)
 				require.Contains(string(out), "Untapped Service \"", "did not untap successfully")
 			}
+		})
+	}
+}
+
+func Test_attachArgs(t *testing.T) {
+	tests := []struct {
+		Name     string
+		Flags    []string
+		Expected []string
+	}{
+		{"no_kubeconfig_flags", nil, []string{"exec", "-it", "pod", "-n", "ns", "-c", "mittens", "--", "tmux", "attach-session", "-t", "mitmproxy"}},
+		{
+			"kubeconfig_flags",
+			[]string{"--kubeconfig", "/tmp/kubeconfig", "--context", "ctx", "--cluster", "cl", "--user", "usr", "--server", "https://ignored"},
+			[]string{"exec", "-it", "pod", "-n", "ns", "-c", "mittens", "--kubeconfig", "/tmp/kubeconfig", "--context", "ctx", "--cluster", "cl", "--user", "usr", "--", "tmux", "attach-session", "-t", "mitmproxy"},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.Name, func(t *testing.T) {
+			require := require.New(t)
+			cmd := &cobra.Command{}
+			genericclioptions.NewConfigFlags(false).AddFlags(cmd.PersistentFlags())
+			testViper := viper.New()
+			require.NoError(testViper.BindPFlags(cmd.PersistentFlags()))
+			require.NoError(cmd.PersistentFlags().Parse(tc.Flags))
+			require.Equal(tc.Expected, attachArgs("pod", "ns", testViper))
 		})
 	}
 }
